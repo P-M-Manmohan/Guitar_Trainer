@@ -1,0 +1,123 @@
+guitar-learning-app/
+├── README.md
+├── .gitignore
+├── docs/
+│   ├── architecture.md
+│   ├── roadmap.md
+│   └── api.md
+│
+├── frontend/
+│   ├── package.json
+│   ├── public/
+│   └── src/
+│       ├── app/
+│       ├── components/
+│       │   ├── camera/
+│       │   ├── audio/
+│       │   ├── chord/
+│       │   └── feedback/
+│       ├── hooks/
+│       ├── pages/
+│       ├── services/
+│       │   ├── api.ts
+│       │   ├── audio.ts
+│       │   └── camera.ts
+│       ├── types/
+│       └── utils/
+│
+├── backend/
+│   ├── Cargo.toml
+│   ├── Cargo.lock
+│   └── src/
+│       ├── main.rs
+│       ├── config/
+│       │   └── mod.rs
+│       ├── api/
+│       │   ├── mod.rs
+│       │   ├── routes.rs
+│       │   ├── handlers/
+│       │   │   ├── health.rs
+│       │   │   ├── audio.rs
+│       │   │   ├── chord.rs
+│       │   │   └── session.rs
+│       │   └── dto/
+│       │       ├── audio.rs
+│       │       ├── chord.rs
+│       │       └── feedback.rs
+│       ├── audio/
+│       │   ├── mod.rs
+│       │   ├── input.rs
+│       │   ├── buffer.rs
+│       │   ├── fft.rs
+│       │   ├── window.rs
+│       │   ├── pitch.rs
+│       │   ├── note.rs
+│       │   └── smoothing.rs
+│       ├── music/
+│       │   ├── mod.rs
+│       │   ├── note.rs
+│       │   ├── chord.rs
+│       │   ├── tuning.rs
+│       │   └── tab.rs
+│       ├── domain/
+│       │   ├── mod.rs
+│       │   ├── practice.rs
+│       │   ├── detection.rs
+│       │   └── feedback.rs
+│       ├── services/
+│       │   ├── mod.rs
+│       │   ├── audio_service.rs
+│       │   ├── chord_service.rs
+│       │   ├── tab_service.rs
+│       │   └── feedback_service.rs
+│       ├── integrations/
+│       │   ├── mod.rs
+│       │   ├── ml_client.rs
+│       │   └── storage.rs
+│       └── utils/
+│           ├── mod.rs
+│           └── errors.rs
+│
+├── ml-service/
+│   ├── requirements.txt
+│   ├── app/
+│   │   ├── main.py
+│   │   ├── api/
+│   │   │   ├── routes.py
+│   │   │   └── schemas.py
+│   │   ├── vision/
+│   │   │   ├── camera.py
+│   │   │   ├── hand_tracking.py
+│   │   │   ├── fretboard_detection.py
+│   │   │   └── fingering_classifier.py
+│   │   ├── audio/
+│   │   │   └── optional_audio_models.py
+│   │   ├── models/
+│   │   └── utils/
+│   └── tests/
+│
+├── shared/
+│   ├── schemas/
+│   │   ├── chord.json
+│   │   ├── note.json
+│   │   ├── feedback.json
+│   │   └── session.json
+│   └── examples/
+│
+├── assets/
+│   ├── chords/
+│   ├── tabs/
+│   ├── sounds/
+│   └── images/
+│
+├── scripts/
+│   ├── dev.sh
+│   ├── run-backend.sh
+│   ├── run-frontend.sh
+│   └── run-ml-service.sh
+│
+└── tests/
+    ├── integration/
+    └── sample_data/
+        ├── audio/
+        └── video/
