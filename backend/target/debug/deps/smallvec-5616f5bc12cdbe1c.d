@@ -1,7 +1,0 @@
-/home/salami/Documents/programs/guitar_trainer/backend/target/debug/deps/smallvec-5616f5bc12cdbe1c.d: /home/salami/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/smallvec-1.15.1/src/lib.rs
-
-/home/salami/Documents/programs/guitar_trainer/backend/target/debug/deps/libsmallvec-5616f5bc12cdbe1c.rlib: /home/salami/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/smallvec-1.15.1/src/lib.rs
-
-/home/salami/Documents/programs/guitar_trainer/backend/target/debug/deps/libsmallvec-5616f5bc12cdbe1c.rmeta: /home/salami/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/smallvec-1.15.1/src/lib.rs
-
-/home/salami/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/smallvec-1.15.1/src/lib.rs:
