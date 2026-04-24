@@ -11,6 +11,8 @@ impl OnsetDetector {
     pub fn is_onset(&mut self, samples: &[f32]) -> bool {
         let energy = (samples.iter().map(|x| x * x).sum::<f32>() / samples.len() as f32).sqrt();
 
+        println!("{}",energy);
+
         let is_detected = energy > self.threshold; 
         
         self.last_energy = energy;
