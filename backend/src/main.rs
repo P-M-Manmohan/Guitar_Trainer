@@ -27,7 +27,7 @@ async fn main() {
     
     let app = create_app();
 
-    let listener = TcpListener::bind("127.0.0.1:8000").await.unwrap();
+    let listener = TcpListener::bind("127.0.0.1:8080").await.unwrap();
     println!("server is running on {:?}",listener);
 
     axum::serve(listener, app).await.unwrap();

@@ -1,3 +1,10 @@
+
+///
+///takes the frequency and converts them into the respective musical notes
+///
+///examples
+///
+///if frequency is 440 it returns A4
 pub fn freq_to_note(freq: f32) -> String {
     if freq <= 0.0 {
         return "Silence".to_string();
