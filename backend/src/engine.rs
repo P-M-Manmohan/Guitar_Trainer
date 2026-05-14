@@ -3,7 +3,7 @@ use ringbuf::traits::{ Split, Consumer, Observer};
 use std::thread;
 use std::sync::Arc;
 use std::time::Duration;
-use crate::{audio::{ processor::NoteProcessor, onset::OnsetDetector, stream}, AppState, theory::{ note, pitch } };
+use crate::{audio::{ processor::NoteProcessor, onset::OnsetDetector, stream, noise_remover::NoiseRemover}, AppState, theory::{ note, pitch } };
 
 
 ///Starts the Engine
@@ -20,39 +20,53 @@ use crate::{audio::{ processor::NoteProcessor, onset::OnsetDetector, stream}, Ap
 ///
 ///if i play the E string on a guitar it prints E
 pub fn start(state: Arc<AppState>) {
+
     let rb = HeapRb::<f32>::new(8192);
     let (stream_input, mut stream_reader) = rb.split();
 
     println!("Initializing audio device...");
 
     let mut processor = NoteProcessor::new(2048);
-    let mut onset_detector = OnsetDetector::new(0.5);
+    let mut onset_detector = OnsetDetector::new(100.0);
     let mut chunk = vec![0.0; 2048];
+    let mut noise_remover = NoiseRemover::new(2048);
 
-    println!("Engine running. Play your guitar!");
+    println!("Calibrating... Please stay quiet for 2 seconds");
+    std::thread::sleep(Duration::from_secs(2));
+
 
     thread::spawn(move || {
         
         let _stream = stream::start_input_stream(stream_input);
+
+        if stream_reader.occupied_len() >= 2048{
+            stream_reader.pop_slice(&mut chunk);
+            let noise_fft = processor.process(&chunk);
+            noise_remover.calibrate(noise_fft);
+        }
+        println!("Engine running. Play your guitar!");
+
         loop {
 //            println!("length of input{}", stream_reader.occupied_len());
             if stream_reader.occupied_len() >= 2048 {
                 stream_reader.pop_slice(&mut chunk);
 
                 
-                if onset_detector.is_onset(&chunk){
-                    let fft_data = processor.process(&chunk);
-                    let freq = pitch::detect_pitch(fft_data, 44100.0);
-                    println!("{}", freq);
+                    let mut fft_data = processor.process(&chunk).to_vec();
+                    noise_remover.subtract(&mut fft_data);
+                    let freq = pitch::detect_pitch(&fft_data, 44100.0);
 
-                    if freq > 0.0 {
+                    if onset_detector.is_onset(&fft_data, freq){
                         let note_name = note::freq_to_note(freq);
+                        if note_name == "Silence" {
+                            continue;
+                        }
 
                         let mut current = state.current_note.lock().unwrap();
                         *current = note_name;
                         println!("NEW NOTE STRUCK: {}", *current);
                     }
-                }
+                
             } else {
                 thread::sleep(Duration::from_millis(5));
             }

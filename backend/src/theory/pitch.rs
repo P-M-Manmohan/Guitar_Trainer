@@ -1,7 +1,7 @@
 use rustfft::num_complex::Complex;
 
 ///inputs fft data and identifies the peak(main) frequency being played
-pub fn detect_pitch(fft_data: &[Complex<f32>], sample_rate: f32) -> f32 {
+pub fn detect_pitch(fft_data: &Vec<Complex<f32>>, sample_rate: f32) -> f32 {
     let half_len = fft_data.len() / 2;
 
     let mut max_magnitude = 0.0;
