@@ -12,8 +12,15 @@ RING_TIP = 16
 PINKY_TIP = 20
 
 class ChordClassifier:
-    def __init__(self, model_path: str = "app/models/chord_classifier.pkl"):
-        self.model_path = model_path
+    def __init__(self, model_path: Optional[str] = None):
+        if model_path is None:
+            self.model_path = os.path.join(
+                os.path.dirname(os.path.dirname(__file__)),
+                "models",
+                "chord_classifier.pkl"
+            )
+        else:
+            self.model_path = model_path
         self.model = None
         self.load_model()
 
