@@ -80,14 +80,24 @@ class ChordClassifier:
         # 5. Flatten the 21x3 matrix into a 63-element feature vector
         return normalized.flatten().tolist()
 
-    def train_model(self, X_train: List[List[float]], y_train: List[str]):
+    def train_model(
+        self,
+        X_train: List[List[float]],
+        y_train: List[str],
+        n_estimators: int = 200,
+        random_state: int = 42
+    ):
         """
         Trains a Random Forest classifier.
         X_train: list of 63-element feature vectors.
         y_train: list of string labels (e.g. 'G_Major', 'C_Major').
         """
         from sklearn.ensemble import RandomForestClassifier
-        self.model = RandomForestClassifier(n_estimators=100, random_state=42)
+        self.model = RandomForestClassifier(
+            n_estimators=n_estimators,
+            random_state=random_state,
+            class_weight="balanced"
+        )
         self.model.fit(X_train, y_train)
         self.save_model()
 

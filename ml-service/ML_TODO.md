@@ -7,21 +7,27 @@ This document outlines the incomplete features, missing pipelines, and next step
 ## 📋 Outstanding Tasks
 
 ### 1. Train the ML Chord Classifier (`chord_classifier.pkl`)
-* **Current Status**: The service tries to load a pre-trained model file at `app/models/chord_classifier.pkl` (see [fingering_classifier.py](file:///c:/Users/angel/projects/Guitar_Trainer/ml-service/app/vision/fingering_classifier.py#L15-L30)). If it is missing, it falls back to a basic hand-coded heuristic rule (`_heuristic_predict`) to detect C, G, and Em.
-* **What is missing**:
-  - **Data Collection Script**: A script to capture and record hand landmarks (using MediaPipe) for various chords played by users to create a training dataset.
-  - **Training Script**: A Python script to load the collected coordinates, split them into training/testing sets, fit the `RandomForestClassifier` (already defined in [fingering_classifier.py](file:///c:/Users/angel/projects/Guitar_Trainer/ml-service/app/vision/fingering_classifier.py#L76-L85)), and dump the output to `app/models/chord_classifier.pkl`.
+* **Current Status**: Implemented. The service still loads `app/models/chord_classifier.pkl` when present and falls back to `_heuristic_predict` if it is missing or invalid.
+* **Completed work**:
+  - **Data Collection Script**: `scripts/collect_data.py` captures MediaPipe hand landmarks from a webcam and appends labeled rows to `data/chord_landmarks.csv`.
+  - **Training Script**: `scripts/train_model.py` loads collected landmarks, extracts the existing 63-value normalized feature vector, performs a holdout evaluation, trains a `RandomForestClassifier`, and saves `app/models/chord_classifier.pkl`.
+* **Example commands**:
+  ```bash
+  python scripts/collect_data.py --chord G --samples 100
+  python scripts/train_model.py --input data/chord_landmarks.csv
+  ```
 * **Where to code**:
   - Create a dataset collection helper in `ml-service/scripts/collect_data.py`.
   - Create a training script `ml-service/scripts/train_model.py`.
 
 ### 2. Dynamic Fretboard Calibration (`fretboard_detection.py`)
-* **Current Status**: [fretboard_detection.py](file:///c:/Users/angel/projects/Guitar_Trainer/ml-service/app/vision/fretboard_detection.py#L21-L49) defines a Hough Line detector (`detect_neck_lines`) to find the lines of the guitar neck, but it is currently **unused**. The mapping system (`map_finger_to_string_and_fret`) relies on a static bounding box (`default_neck_bbox`).
-* **What is missing**:
-  - Integrate the detected line results from `detect_neck_lines` into `map_finger_to_string_and_fret` so the bounding box adjusts dynamically when the camera angle or guitar position shifts.
-  - Alternatively, create a calibration wizard or coordinate configuration overlay in the frontend, allowing users to align the neck bounds.
-* **Where to code**:
-  - Refactor `map_finger_to_string_and_fret` in [fretboard_detection.py](file:///c:/Users/angel/projects/Guitar_Trainer/ml-service/app/vision/fretboard_detection.py#L50-L101).
+* **Current Status**: Implemented. `fretboard_detection.py` now estimates a dynamic neck quadrilateral with `detect_neck_bbox`, and `map_finger_to_string_and_fret` can use that dynamic calibration.
+* **Completed work**:
+  - The `/process-frame` route passes the decoded frame into `analyze_hand_placement`.
+  - Manual `neck_bbox` values from the frontend still take priority.
+  - If dynamic line detection is weak, the code falls back to `default_neck_bbox`.
+* **Future frontend option**:
+  - A calibration overlay is still a good user-experience improvement because it gives players a reliable manual fallback in difficult lighting or camera angles.
 
 ---
 

@@ -54,7 +54,7 @@ def process_frame(payload: FrameRequest):
             "bottom_right": payload.neck_bbox.bottom_right
         }
         
-    placement = fret_detector.analyze_hand_placement(landmarks, bbox_dict)
+    placement = fret_detector.analyze_hand_placement(landmarks, bbox_dict, frame)
 
     # 5. Format response structures
     response_landmarks = [
