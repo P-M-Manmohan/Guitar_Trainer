@@ -1,0 +1,113 @@
+name: guitar-backend
+services:
+  app:
+    build:
+      context: /home/salami/Documents/programs/guitar_trainer/guitar-backend
+      dockerfile: Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+        required: true
+    environment:
+      AI_SERVICE_KEY: ""
+      AI_SERVICE_URL: http://localhost:9000
+      AWS_ACCESS_KEY_ID: ""
+      AWS_SECRET_ACCESS_KEY: ""
+      DATABASE_URL: postgres://guitar:guitar_secret@pgbouncer:6432/guitar_dev
+      DB_POOL_MAX: "20"
+      ENVIRONMENT: development
+      JWT_EXPIRY_SECS: "86400"
+      JWT_SECRET: dev_secret_change_in_production
+      PORT: "8080"
+      RATE_LIMIT_RPS: "60"
+      REDIS_URL: redis://redis:6379
+      REFRESH_TOKEN_EXPIRY_SECS: "2592000"
+      S3_BUCKET: guitar-dev
+      S3_ENDPOINT: ""
+      S3_REGION: auto
+    networks:
+      default: null
+    ports:
+      - mode: ingress
+        target: 8080
+        published: "8080"
+        protocol: tcp
+    volumes:
+      - type: bind
+        source: /home/salami/Documents/programs/guitar_trainer/guitar-backend
+        target: /app
+        bind: {}
+  pgbouncer:
+    depends_on:
+      postgres:
+        condition: service_healthy
+        required: true
+    environment:
+      PGBOUNCER_DEFAULT_POOL_SIZE: "25"
+      PGBOUNCER_MAX_CLIENT_CONN: "1000"
+      PGBOUNCER_POOL_MODE: transaction
+      POSTGRESQL_DATABASE: guitar_dev
+      POSTGRESQL_HOST: postgres
+      POSTGRESQL_PASSWORD: guitar_secret
+      POSTGRESQL_PORT: "5432"
+      POSTGRESQL_USERNAME: guitar
+    image: edoburu/pgbouncer:latest
+    networks:
+      default: null
+    ports:
+      - mode: ingress
+        target: 6432
+        published: "6432"
+        protocol: tcp
+  postgres:
+    environment:
+      POSTGRES_DB: guitar_dev
+      POSTGRES_PASSWORD: guitar_secret
+      POSTGRES_USER: guitar
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U guitar
+      interval: 5s
+      retries: 5
+    image: postgres:16-alpine
+    networks:
+      default: null
+    ports:
+      - mode: ingress
+        target: 5432
+        published: "5432"
+        protocol: tcp
+    volumes:
+      - type: volume
+        source: pg_data
+        target: /var/lib/postgresql/data
+        volume: {}
+  redis:
+    command:
+      - redis-server
+      - --maxmemory
+      - 256mb
+      - --maxmemory-policy
+      - allkeys-lru
+    image: redis:7-alpine
+    networks:
+      default: null
+    ports:
+      - mode: ingress
+        target: 6379
+        published: "6379"
+        protocol: tcp
+    volumes:
+      - type: volume
+        source: redis_data
+        target: /data
+        volume: {}
+networks:
+  default:
+    name: guitar-backend_default
+volumes:
+  pg_data:
+    name: guitar-backend_pg_data
+  redis_data:
+    name: guitar-backend_redis_data

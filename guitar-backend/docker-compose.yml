@@ -1,0 +1,81 @@
+services:
+  # ── Postgres ────────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: guitar_dev
+      POSTGRES_USER: guitar
+      POSTGRES_PASSWORD: guitar_secret
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U guitar"]
+      interval: 5s
+      retries: 5
+
+  # ── PgBouncer ────────────────────────────────────────────────────────────────
+  # Transaction-mode pooler. In production this sits between your app and Postgres.
+  # Each backend instance connects to PgBouncer, not Postgres directly.
+  # This lets you run 8 instances × pool_max=20 while Postgres only sees ~40 connections.
+  pgbouncer:
+    image: edoburu/pgbouncer:latest
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      POSTGRESQL_HOST: postgres
+      POSTGRESQL_PORT: 5432
+      POSTGRESQL_DATABASE: guitar_dev
+      POSTGRESQL_USERNAME: guitar
+      POSTGRESQL_PASSWORD: guitar_secret
+      PGBOUNCER_POOL_MODE: transaction
+      PGBOUNCER_MAX_CLIENT_CONN: 1000
+      PGBOUNCER_DEFAULT_POOL_SIZE: 25
+    ports:
+      - "6432:6432"
+
+  # ── Redis ────────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  # ── App (dev) ────────────────────────────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PORT: 8080
+      ENVIRONMENT: development
+      # Point at PgBouncer, not Postgres directly
+      DATABASE_URL: postgres://guitar:guitar_secret@pgbouncer:6432/guitar_dev
+      DB_POOL_MAX: 20
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: dev_secret_change_in_production
+      JWT_EXPIRY_SECS: 86400
+      REFRESH_TOKEN_EXPIRY_SECS: 2592000
+      S3_BUCKET: guitar-dev
+      S3_REGION: auto
+      S3_ENDPOINT: ""
+      AWS_ACCESS_KEY_ID: ""
+      AWS_SECRET_ACCESS_KEY: ""
+      AI_SERVICE_URL: http://localhost:9000
+      AI_SERVICE_KEY: ""
+      RATE_LIMIT_RPS: 60
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./:/app
+
+volumes:
+  pg_data:
+  redis_data:
