@@ -1,7 +1,13 @@
+import { router } from "expo-router";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import HomeButton from "../components/HomeButton";
+import { useProgressStore } from "../store/progressStore";
 
 export default function HomeScreen() {
+  const completedLessons =
+  useProgressStore(
+    (state) => state.completedLessons
+  );
   return (
     <ScrollView
       style={{
@@ -34,6 +40,34 @@ export default function HomeScreen() {
         }}
       >
         Ready to practice today?
+        <View
+        style={{
+        backgroundColor: "#1F2937",
+        padding: 20,
+        borderRadius: 15,
+        marginTop: 25,
+       }}
+>
+  <Text
+    style={{
+      color: "white",
+      fontSize: 20,
+      fontWeight: "bold",
+    }}
+  >
+    Progress
+  </Text>
+
+  <Text
+    style={{
+      color: "#BBBBBB",
+      marginTop: 10,
+      fontSize: 16,
+    }}
+  >
+    Lessons Completed: {completedLessons.length}
+  </Text>
+</View>
       </Text>
 
       {/* Progress Card */}
@@ -79,13 +113,14 @@ export default function HomeScreen() {
       {/* Start Practice Button */}
 
       <TouchableOpacity
-        style={{
-          backgroundColor: "#3B82F6",
-          padding: 20,
-          borderRadius: 15,
-          marginTop: 25,
-        }}
-      >
+      onPress={() => router.push("/practice")}
+      style={{
+       backgroundColor: "#3B82F6",
+       padding: 20,
+       borderRadius: 15,
+       marginTop: 25,
+     }}
+>
         <Text
           style={{
             color: "white",
@@ -111,9 +146,15 @@ export default function HomeScreen() {
   Quick Actions
 </Text>
 
-<HomeButton title="📚 Lessons" />
+<HomeButton
+  title="📚 Lessons"
+  onPress={() => router.push("/lessons")}
+/>
 <HomeButton title="🎵 Chords" />
-<HomeButton title="📈 Progress" />
+<HomeButton
+  title="📈 Progress"
+  onPress={() => router.push("/profile")}
+/>
 <HomeButton title="🎸 Tuner" />
 
       {/* Recent Activity */}
