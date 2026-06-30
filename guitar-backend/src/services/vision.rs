@@ -1,7 +1,4 @@
-use crate::{
-    errors::Result,
-    models::{FingerPosition, HandLandmarks, LandmarkPoint},
-};
+/*use crate::models::vision_analysis::{ HandLandmarks, LandmarkPoint};
 
 // MediaPipe returns 21 landmarks per hand.
 // We care about fingertips (4,8,12,16,20) and MCP joints (5,9,13,17)
@@ -100,4 +97,4 @@ fn fallback_score(reason: &str) -> VisionScore {
         per_finger: vec![],
         summary: reason.into(),
     }
-}
+}*/

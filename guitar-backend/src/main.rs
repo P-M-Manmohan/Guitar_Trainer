@@ -15,6 +15,8 @@ mod handlers;
 mod middleware;
 mod models;
 mod services;
+mod music;
+mod routes;
 
 use config::AppConfig;
 use db::{Database, RedisPool};
@@ -65,13 +67,18 @@ async fn main() -> anyhow::Result<()> {
     let state = AppState { db, redis, config: config.clone(), s3 };
 
     // ── Router ────────────────────────────────────────────────────────────────
+    //
     let app = Router::new()
-        .merge(handlers::auth::routes())
-        .merge(handlers::lessons::routes())
-        .merge(handlers::practice::routes())
-        .merge(handlers::progress::routes())
-        .merge(handlers::vision::routes())
-        .merge(handlers::chords::routes())
+    .merge(routes::chord::chord_router())
+    .layer(axum_middleware::from_fn_with_state(
+        state.clone(),
+        mw::auth::optional_auth,
+    ))
+    .with_state(state);
+
+    /*
+    let app = Router::new()
+        .merge(routes::chord::chord_router())
         .layer(axum_middleware::from_fn_with_state(state.clone(), mw::auth::optional_auth))
         .layer(TraceLayer::new_for_http())
         .layer(CompressionLayer::new())
@@ -82,7 +89,8 @@ async fn main() -> anyhow::Result<()> {
                 .allow_methods(Any)
                 .allow_headers(Any),
         )
-        .with_state(state);
+        .with_state(());
+    */
 
     // ── Listen ────────────────────────────────────────────────────────────────
     let addr = format!("0.0.0.0:{}", config.port);

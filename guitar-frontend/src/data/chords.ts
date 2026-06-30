@@ -91,10 +91,9 @@ export const chords = [
       "2nd fret - Strings 3 & 4",
     ],
   },
-];
-
-/*  {
-id: "F",
+    
+  {
+    id: "F",
     name: "F Major",
     category: "Barre",
     difficulty: "Intermediate",
@@ -105,4 +104,4 @@ id: "F",
     ],
     description: "Your first barre chord.",
   },
-];*/
+];

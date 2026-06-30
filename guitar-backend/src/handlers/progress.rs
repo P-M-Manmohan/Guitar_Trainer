@@ -1,7 +1,7 @@
 use axum::{extract::{Query, State}, routing::get, Json, Router};
 use serde::{Deserialize, Serialize};
 
-use crate::{errors::Result, middleware::auth::AuthUser, models::DailyProgress, AppState};
+use crate::{errors::Result, middleware::auth::AuthUser, models::progress::DailyProgress, AppState};
 
 pub fn routes() -> Router<AppState> {
     Router::new()

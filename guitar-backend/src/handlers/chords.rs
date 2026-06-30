@@ -1,4 +1,4 @@
-use axum::{
+/*use axum::{
     extract::{Path, Query, State},
     routing::get,
     Json, Router,
@@ -8,7 +8,7 @@ use uuid::Uuid;
 
 use crate::{
     errors::{AppError, Result},
-    models::{Chord, ChordVoicing, FingerPosition},
+    //models::{Chord, ChordVoicing, FingerPosition},
     services::cache,
     AppState,
 };
@@ -28,29 +28,30 @@ pub struct ChordFilter {
     pub tag: Option<String>,
 }
 
-pub async fn list_chords(
-    State(state): State<AppState>,
-    Query(filter): Query<ChordFilter>,
-) -> Result<Json<Vec<Chord>>> {
+//pub async fn list_chords(
+//    State(state): State<AppState>,
+//    Query(filter): Query<ChordFilter>,
+//) -> Result<Json<Vec<Chord>>> {
     // Cache the full chord list for 10 min (it's seed data, rarely changes)
-    let mut redis = state.redis.clone();
-    let cache_key = "chords:all";
+//    let mut redis = state.redis.clone();
+//    let cache_key = "chords:all";
 
-    if filter.tuning_id.is_none() && filter.quality.is_none()
-        && filter.difficulty.is_none() && filter.tag.is_none()
-    {
-        let chords = cache::get_or_set(&mut redis, cache_key, 600, || async {
-            Ok(sqlx::query_as!(Chord, "SELECT * FROM chords ORDER BY name")
-                .fetch_all(&state.db)
-                .await?)
-        })
-        .await?;
-        return Ok(Json(chords));
-    }
+//    if filter.tuning_id.is_none() && filter.quality.is_none()
+//        && filter.difficulty.is_none() && filter.tag.is_none()
+//    {
+//        let chords = cache::get_or_set(&mut redis, cache_key, 600, || async {
+//            Ok(sqlx::query_as!(Chord, "SELECT * FROM chords ORDER BY name")
+//                .fetch_all(&state.db)
+//                .await?)
+//        })
+//        .await?;
+//        return Ok(Json(chords));
+//    }
 
     // Filtered query
-    let chords = sqlx::query_as!(
-        Chord,
+//    let chords = sqlx::query_as!(
+//        Chord,
+/*
         r#"
         SELECT DISTINCT c.*
         FROM chords c
@@ -58,21 +59,23 @@ pub async fn list_chords(
         LEFT JOIN chord_tags ct ON ct.voicing_id = cv.id
         WHERE ($1::uuid IS NULL OR cv.tuning_id = $1)
           AND ($2::text IS NULL OR c.quality = $2)
-          AND ($3::int IS NULL OR cv.difficulty = $3)
-          AND ($4::text IS NULL OR ct.tag = $4)
+         AND ($3::int IS NULL OR cv.difficulty = $3)
+         AND ($4::text IS NULL OR ct.tag = $4)
         ORDER BY c.name
         "#,
-        filter.tuning_id,
-        filter.quality,
-        filter.difficulty,
-        filter.tag,
-    )
-    .fetch_all(&state.db)
-    .await?;
+        */
 
-    Ok(Json(chords))
-}
+//        filter.tuning_id,
+//        filter.quality,
+//        filter.difficulty,
+//        filter.tag,
+//    )
+//    .fetch_all(&state.db)
+//    .await?;
 
+//    Ok(Json(chords))
+//}
+/*
 pub async fn voicings_for_chord(
     State(state): State<AppState>,
     Path(chord_id): Path<Uuid>,
@@ -120,3 +123,7 @@ pub async fn finger_positions(
 
     Ok(Json(positions))
 }
+
+AND*/
+
+*/

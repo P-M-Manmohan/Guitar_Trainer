@@ -22,9 +22,14 @@ target
 
 # Python / local development
 __pycache__/
+**/__pycache__/
 *.py[cod]
+*$py.class
+
+# Virtual environments
 .venv/
 venv/
+env/
 
 # macOS
 .DS_Store

@@ -1,4 +1,4 @@
-use axum::{
+/*use axum::{
     extract::{Path, State},
     routing::{get, post},
     Json, Router,
@@ -9,7 +9,8 @@ use uuid::Uuid;
 use crate::{
     errors::{AppError, Result},
     middleware::auth::AuthUser,
-    models::{ExerciseResult, HandLandmarks, PracticeSession},
+    models::practice::{ExerciseResult, PracticeSession},
+    models::vision_analysis::HandLandmarks,
     services::vision,
     AppState,
 };
@@ -162,3 +163,4 @@ pub async fn get_session(
 
     Ok(Json(session))
 }
+*/

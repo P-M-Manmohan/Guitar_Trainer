@@ -2,7 +2,7 @@ use axum::{extract::{Path, Query, State}, routing::get, Json, Router};
 use serde::Deserialize;
 use uuid::Uuid;
 
-use crate::{errors::{AppError, Result}, models::{Exercise, Lesson}, AppState};
+use crate::{errors::{AppError, Result}, models::lessons::{Exercise, Lesson}, AppState};
 
 pub fn routes() -> Router<AppState> {
     Router::new()

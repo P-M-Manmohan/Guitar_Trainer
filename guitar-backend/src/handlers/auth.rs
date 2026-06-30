@@ -6,9 +6,9 @@ use validator::Validate;
 use crate::{
     errors::{AppError, Result},
     middleware::auth::{validate_token, TokenType},
-    models::User,
     services::auth as auth_svc,
     AppState,
+    models::users::User,
 };
 
 pub fn routes() -> Router<AppState> {
