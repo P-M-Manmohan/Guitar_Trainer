@@ -1,4 +1,4 @@
-import { Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 import { useProgressStore } from "../store/progressStore";
 
 export default function ProfileScreen() {
@@ -31,11 +31,15 @@ export default function ProfileScreen() {
       : 100;
 
   return (
-    <View
+    <ScrollView
       style={{
         flex: 1,
         backgroundColor: "#121212",
+      }}
+      contentContainerStyle={{
         padding: 20,
+        paddingTop: 50,
+        paddingBottom: 40,
       }}
     >
       <Text
@@ -60,7 +64,7 @@ export default function ProfileScreen() {
         }}
       >
         <Text style={{ color: "white", fontSize: 18 }}>
-          📚 Lessons Completed
+          Lessons Completed
         </Text>
 
         <Text
@@ -84,7 +88,7 @@ export default function ProfileScreen() {
         }}
       >
         <Text style={{ color: "white", fontSize: 18 }}>
-          🔥 Current Streak
+          Current Streak
         </Text>
 
         <Text
@@ -134,7 +138,7 @@ export default function ProfileScreen() {
         }}
       >
         <Text style={{ color: "white", fontSize: 18 }}>
-          🎸 Level
+          Level
         </Text>
 
         <Text
@@ -187,7 +191,7 @@ export default function ProfileScreen() {
             marginBottom: 15,
           }}
         >
-          🏆 Achievements
+          Achievements
         </Text>
 
         <Text style={{ color: "white", fontSize: 16 }}>
@@ -214,6 +218,6 @@ export default function ProfileScreen() {
           {practiceMinutes >= 60 ? "✅" : "⬜"} One Hour Practice
         </Text>
       </View>
-    </View>
+    </ScrollView>
   );
 }
