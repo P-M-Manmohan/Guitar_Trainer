@@ -2,14 +2,12 @@ import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useProgressStore } from "../store/progressStore";
 
 type PracticeCardProps = {
-  emoji: string;
   title: string;
   description: string;
   onPress: () => void;
 };
 
 function PracticeCard({
-  emoji,
   title,
   description,
   onPress,
@@ -31,7 +29,7 @@ function PracticeCard({
           fontWeight: "bold",
         }}
       >
-        {emoji} {title}
+        {title}
       </Text>
 
       <Text
@@ -82,7 +80,7 @@ export default function PracticeScreen() {
           marginTop: 60,
         }}
       >
-        🎸 Practice
+        Practice
       </Text>
 
       {/* Daily Goal */}
@@ -133,17 +131,8 @@ export default function PracticeScreen() {
           />
         </View>
       </View>
-
       <PracticeCard
-        emoji="🎯"
-        title="Quick Practice"
-        description="Add 10 minutes to today's practice."
-        onPress={() => addPracticeMinutes(10)}
-      />
-
-      <PracticeCard
-        emoji="🎼"
-        title="Chord Practice"
+        title="Practice"
         description="Practice chords with AI feedback."
         onPress={() =>
           Alert.alert(
@@ -152,45 +141,7 @@ export default function PracticeScreen() {
           )
         }
       />
-
       <PracticeCard
-        emoji="📷"
-        title="Hand Placement"
-        description="Check finger positioning using your camera."
-        onPress={() =>
-          Alert.alert(
-            "Coming Soon",
-            "Computer vision will be added later."
-          )
-        }
-      />
-
-      <PracticeCard
-        emoji="🎤"
-        title="Audio Analysis"
-        description="Analyze your guitar playing."
-        onPress={() =>
-          Alert.alert(
-            "Coming Soon",
-            "Audio analysis will be added later."
-          )
-        }
-      />
-
-      <PracticeCard
-        emoji="🎵"
-        title="Guitar Tuner"
-        description="Tune your guitar."
-        onPress={() =>
-          Alert.alert(
-            "Coming Soon",
-            "The tuner will be added later."
-          )
-        }
-      />
-
-      <PracticeCard
-        emoji="⏱"
         title="Metronome"
         description="Practice with adjustable BPM."
         onPress={() =>
@@ -202,7 +153,6 @@ export default function PracticeScreen() {
       />
 
       <PracticeCard
-        emoji="📈"
         title="Practice History"
         description="Review your previous sessions."
         onPress={() =>

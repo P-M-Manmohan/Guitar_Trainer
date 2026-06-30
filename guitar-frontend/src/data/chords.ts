@@ -8,7 +8,7 @@ export const chords = [
     id: "C",
     name: "C Major",
     category: "Major",
-    difficulty: "Beginner",
+    difficulty: "Easy",
 
     diagram: CMajor,
 
@@ -26,7 +26,7 @@ export const chords = [
     id: "G",
     name: "G Major",
     category: "Major",
-    difficulty: "Beginner",
+    difficulty: "Easy",
 
     diagram: GMajor,
 
@@ -44,7 +44,7 @@ export const chords = [
     id: "D",
     name: "D Major",
     category: "Major",
-    difficulty: "Beginner",
+    difficulty: "Easy",
 
     diagram: DMajor,
 
@@ -62,7 +62,7 @@ export const chords = [
     id: "E",
     name: "E Major",
     category: "Major",
-    difficulty: "Beginner",
+    difficulty: "Easy",
 
     diagram: EMajor,
 
@@ -79,7 +79,7 @@ export const chords = [
     id: "Am",
     name: "A Minor",
     category: "Minor",
-    difficulty: "Beginner",
+    difficulty: "Easy",
 
     diagram: AMinor,
 

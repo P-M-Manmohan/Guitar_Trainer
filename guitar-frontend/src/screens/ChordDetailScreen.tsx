@@ -1,9 +1,9 @@
 import {
-    Alert,
-    ScrollView,
-    Text,
-    TouchableOpacity,
-    View
+  Alert,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View
 } from "react-native";
 
 type Chord = {
@@ -43,7 +43,7 @@ export default function ChordDetailScreen({
           marginTop: 60,
         }}
       >
-        🎸 {chord.name}
+        {chord.name}
       </Text>
 
       {/* Difficulty */}
@@ -60,7 +60,7 @@ export default function ChordDetailScreen({
             fontSize: 18,
           }}
         >
-          ⭐ {chord.difficulty}
+           {chord.difficulty}
         </Text>
 
         <Text
@@ -171,96 +171,7 @@ export default function ChordDetailScreen({
           </Text>
         ))}
       </View>
-
-      {/* Strings */}
-
-      <View
-        style={{
-          backgroundColor: "#1F2937",
-          padding: 20,
-          borderRadius: 15,
-          marginTop: 25,
-        }}
-      >
-        <Text
-          style={{
-            color: "white",
-            fontSize: 22,
-            fontWeight: "bold",
-          }}
-        >
-          Strings to Play
-        </Text>
-
-        <Text
-          style={{
-            color: "white",
-            marginTop: 15,
-            fontSize: 18,
-          }}
-        >
-          ✓ Play all recommended strings
-        </Text>
-
-        <Text
-          style={{
-            color: "#BBBBBB",
-            marginTop: 10,
-            fontSize: 16,
-          }}
-        >
-          Avoid muted strings unless specified.
-        </Text>
-      </View>
-
-      {/* Common Mistakes */}
-
-      <View
-        style={{
-          backgroundColor: "#1F2937",
-          padding: 20,
-          borderRadius: 15,
-          marginTop: 25,
-        }}
-      >
-        <Text
-          style={{
-            color: "white",
-            fontSize: 22,
-            fontWeight: "bold",
-          }}
-        >
-          Common Mistakes
-        </Text>
-
-        <Text
-          style={{
-            color: "white",
-            marginTop: 15,
-          }}
-        >
-          • Fingers touching nearby strings
-        </Text>
-
-        <Text
-          style={{
-            color: "white",
-            marginTop: 10,
-          }}
-        >
-          • Not pressing close enough to the fret
-        </Text>
-
-        <Text
-          style={{
-            color: "white",
-            marginTop: 10,
-          }}
-        >
-          • Wrist positioned too low
-        </Text>
-      </View>
-
+      
       {/* Buttons */}
 
       <TouchableOpacity
@@ -282,62 +193,10 @@ export default function ChordDetailScreen({
             color: "white",
             textAlign: "center",
             fontSize: 20,
-            fontWeight: "bold",
+            fontWeight: "bold"
           }}
         >
-          ▶ Practice Chord
-        </Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        onPress={() =>
-          Alert.alert(
-            "AI Hand Placement",
-            "Camera feature coming soon!"
-          )
-        }
-        style={{
-          backgroundColor: "#22C55E",
-          padding: 18,
-          borderRadius: 15,
-          marginTop: 15,
-        }}
-      >
-        <Text
-          style={{
-            color: "white",
-            textAlign: "center",
-            fontSize: 20,
-            fontWeight: "bold",
-          }}
-        >
-          📷 Check My Hand
-        </Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        onPress={() =>
-          Alert.alert(
-            "Audio Analysis",
-            "Microphone feature coming soon!"
-          )
-        }
-        style={{
-          backgroundColor: "#F59E0B",
-          padding: 18,
-          borderRadius: 15,
-          marginTop: 15,
-        }}
-      >
-        <Text
-          style={{
-            color: "white",
-            textAlign: "center",
-            fontSize: 20,
-            fontWeight: "bold",
-          }}
-        >
-          🎤 Listen & Compare
+          Practice Chord
         </Text>
       </TouchableOpacity>
     </ScrollView>
