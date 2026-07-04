@@ -1,153 +1,175 @@
-import { router } from "expo-router";
+import { Picker } from "@react-native-picker/picker";
+import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
-  ScrollView,
+  Alert,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
 
-import { chords } from "../data/chords";
+import { getChord } from "../services/chordService";
+
+const scales = [
+  "A",
+  "A#",
+  "B",
+  "C",
+  "C#",
+  "D",
+  "D#",
+  "E",
+  "F",
+  "F#",
+  "G",
+  "G#",
+];
+
+const chordTypes = [
+  "Major",
+  "Minor",
+];
 
 export default function ChordLibraryScreen() {
-  const [selectedType, setSelectedType] = useState<"Major" | "Minor">("Major");
+  const router = useRouter();
 
-  const [easyOpen, setEasyOpen] = useState(true);
-  const [intermediateOpen, setIntermediateOpen] = useState(false);
-  const [hardOpen, setHardOpen] = useState(false);
+  const [scale, setScale] = useState(scales[0]);
+  const [type, setType] = useState(chordTypes[0]);
 
-  const easyChords = chords.filter(
-    (chord) =>
-      chord.category === selectedType &&
-      chord.difficulty === "Easy"
-  );
+  const searchChord = async () => {
+    try {
+      const chord = await getChord(scale, type);
 
-  const intermediateChords = chords.filter(
-    (chord) =>
-      chord.category === selectedType &&
-      chord.difficulty === "Intermediate"
-  );
+      console.log(chord);
 
-  const hardChords = chords.filter(
-    (chord) =>
-      chord.category === selectedType &&
-      chord.difficulty === "Hard"
-  );
+      /*
+       Example:
 
-  const renderChord = (chord: any) => (
-    <TouchableOpacity
-      key={chord.id}
-      onPress={() => router.push(`/chords/${chord.id}`)}
-      style={{
-        backgroundColor: "#1F2937",
-        padding: 16,
-        borderRadius: 12,
-        marginTop: 10,
-        marginLeft: 12,
-      }}
-    >
-      <Text
-        style={{
-          color: "white",
-          fontSize: 18,
-          fontWeight: "600",
-        }}
-      >
-        {chord.name}
-      </Text>
-    </TouchableOpacity>
-  );
+       If backend returns:
+       {
+         route: "/chords/c-major"
+       }
+
+       Uncomment this:
+
+       router.push(chord.route);
+      */
+
+      Alert.alert(
+        "Success",
+        `Received ${JSON.stringify(chord)}`
+      );
+
+    } catch (error) {
+      Alert.alert(
+        "Error",
+        "Unable to find the requested chord."
+      );
+    }
+  };
 
   return (
-    <ScrollView
+    <View
       style={{
         flex: 1,
         backgroundColor: "#121212",
-      }}
-      contentContainerStyle={{
         padding: 20,
-        paddingBottom: 50,
       }}
     >
       <Text
         style={{
           color: "white",
-          fontSize: 32,
+          fontSize: 30,
           fontWeight: "bold",
-          marginTop: 50,
+          marginTop: 60,
           marginBottom: 30,
         }}
       >
         Chord Library
       </Text>
 
-      {/* Major / Minor Selector */}
+      {/* Scale */}
+
+      <Text
+        style={{
+          color: "white",
+          fontSize: 18,
+          marginBottom: 8,
+        }}
+      >
+        Scale
+      </Text>
 
       <View
         style={{
-          flexDirection: "row",
-          marginBottom: 30,
+          backgroundColor: "#1F2937",
+          borderRadius: 12,
+          marginBottom: 25,
         }}
       >
-        <TouchableOpacity
-          onPress={() => setSelectedType("Major")}
+        <Picker
+          selectedValue={scale}
+          onValueChange={(value) => setScale(value)}
+          dropdownIconColor="white"
           style={{
-            flex: 1,
-            padding: 15,
-            marginRight: 5,
-            borderRadius: 12,
-            backgroundColor:
-              selectedType === "Major"
-                ? "#3B82F6"
-                : "#1F2937",
+            color: "white",
           }}
         >
-          <Text
-            style={{
-              color: "white",
-              textAlign: "center",
-              fontWeight: "bold",
-              fontSize: 18,
-            }}
-          >
-            Major
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={() => setSelectedType("Minor")}
-          style={{
-            flex: 1,
-            padding: 15,
-            marginLeft: 5,
-            borderRadius: 12,
-            backgroundColor:
-              selectedType === "Minor"
-                ? "#3B82F6"
-                : "#1F2937",
-          }}
-        >
-          <Text
-            style={{
-              color: "white",
-              textAlign: "center",
-              fontWeight: "bold",
-              fontSize: 18,
-            }}
-          >
-            Minor
-          </Text>
-        </TouchableOpacity>
+          {scales.map((scale) => (
+            <Picker.Item
+              key={scale}
+              label={scale}
+              value={scale}
+            />
+          ))}
+        </Picker>
       </View>
 
-      {/* Easy */}
+      {/* Type */}
 
-      <TouchableOpacity
-        onPress={() => setEasyOpen(!easyOpen)}
+      <Text
+        style={{
+          color: "white",
+          fontSize: 18,
+          marginBottom: 8,
+        }}
+      >
+        Type
+      </Text>
+
+      <View
         style={{
           backgroundColor: "#1F2937",
+          borderRadius: 12,
+          marginBottom: 40,
+        }}
+      >
+        <Picker
+          selectedValue={type}
+          onValueChange={(value) => setType(value)}
+          dropdownIconColor="white"
+          style={{
+            color: "white",
+          }}
+        >
+          {chordTypes.map((type) => (
+            <Picker.Item
+              key={type}
+              label={type}
+              value={type}
+            />
+          ))}
+        </Picker>
+      </View>
+
+      {/* Search Button */}
+
+      <TouchableOpacity
+        onPress={searchChord}
+        style={{
+          backgroundColor: "#3B82F6",
           padding: 18,
-          borderRadius: 15,
+          borderRadius: 12,
         }}
       >
         <Text
@@ -155,61 +177,12 @@ export default function ChordLibraryScreen() {
             color: "white",
             fontSize: 20,
             fontWeight: "bold",
+            textAlign: "center",
           }}
         >
-          {easyOpen ? "▼" : "▶"} Easy
+          Search Chord
         </Text>
       </TouchableOpacity>
-
-      {easyOpen && easyChords.map(renderChord)}
-
-      {/* Intermediate */}
-
-      <TouchableOpacity
-        onPress={() => setIntermediateOpen(!intermediateOpen)}
-        style={{
-          backgroundColor: "#1F2937",
-          padding: 18,
-          borderRadius: 15,
-          marginTop: 20,
-        }}
-      >
-        <Text
-          style={{
-            color: "white",
-            fontSize: 20,
-            fontWeight: "bold",
-          }}
-        >
-          {intermediateOpen ? "▼" : "▶"} Intermediate
-        </Text>
-      </TouchableOpacity>
-
-      {intermediateOpen && intermediateChords.map(renderChord)}
-
-      {/* Hard */}
-
-      <TouchableOpacity
-        onPress={() => setHardOpen(!hardOpen)}
-        style={{
-          backgroundColor: "#1F2937",
-          padding: 18,
-          borderRadius: 15,
-          marginTop: 20,
-        }}
-      >
-        <Text
-          style={{
-            color: "white",
-            fontSize: 20,
-            fontWeight: "bold",
-          }}
-        >
-          {hardOpen ? "▼" : "▶"} Hard
-        </Text>
-      </TouchableOpacity>
-
-      {hardOpen && hardChords.map(renderChord)}
-    </ScrollView>
+    </View>
   );
 }
