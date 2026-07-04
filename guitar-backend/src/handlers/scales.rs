@@ -23,3 +23,12 @@ pub async fn get_minor_scale(
             scale_service::get_minor_scale(&root)
         )
 }
+
+
+pub async fn get_augmented_scale(
+    Path(root): Path<String>,
+    ) -> Json<ScaleResponse> {
+    Json(
+            scale_service::get_augmented_scale(&root)
+        )
+}

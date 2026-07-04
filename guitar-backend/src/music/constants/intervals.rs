@@ -17,3 +17,12 @@ pub const MINOR_SCALE: [usize; 7] = [
     8,
     10,
 ];
+
+pub const AUGMENTED_SCALE: [usize; 6] = [
+    0,
+    3,
+    4,
+    7,
+    8,
+    11,
+];

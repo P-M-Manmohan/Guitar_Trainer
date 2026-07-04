@@ -1,4 +1,4 @@
-use axum::{extract::{Path, Query, State}, routing::get, Json, Router};
+/*use axum::{extract::{Path, Query, State}, routing::get, Json, Router};
 use serde::Deserialize;
 use uuid::Uuid;
 
@@ -74,3 +74,4 @@ pub async fn lesson_exercises(
 
     Ok(Json(exercises))
 }
+*/

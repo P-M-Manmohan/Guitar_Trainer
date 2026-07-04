@@ -46,3 +46,18 @@ pub fn get_minor_scale(root: &str) -> ScaleResponse {
         chords,
     }
 }
+
+pub fn get_augmented_scale(root: &str) -> ScaleResponse {
+    let notes = generate_scale(root, &AUGMENTED_SCALE);
+
+    let chords = build_chords(&notes,&MINOR_KEY_QUALITIES, &MINOR_ROMAN);
+
+    ScaleResponse {
+        scale: Scale {
+            root: root.to_string(),
+            scale_type: "Augmented".into(),
+            notes,
+        },
+        chords,
+    }
+}

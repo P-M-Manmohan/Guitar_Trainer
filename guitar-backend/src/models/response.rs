@@ -7,3 +7,4 @@ pub struct ScaleResponse {
     pub scale: Scale,
     pub chords: Vec<Chord>,
 }
+

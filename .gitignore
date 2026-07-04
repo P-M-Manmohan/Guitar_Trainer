@@ -33,3 +33,7 @@ env/
 
 # macOS
 .DS_Store
+
+
+seed.py
+error.txt

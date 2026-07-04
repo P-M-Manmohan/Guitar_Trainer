@@ -1,5 +1,4 @@
 use axum::{body::Body, extract::{ConnectInfo, Request, State}, middleware::Next, response::Response};
-use redis::AsyncCommands;
 use std::net::SocketAddr;
 use crate::{errors::AppError, AppState};
 

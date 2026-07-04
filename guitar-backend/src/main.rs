@@ -1,11 +1,5 @@
 use std::sync::Arc;
 use axum::{Router, middleware as axum_middleware};
-use tower_http::{
-    cors::{CorsLayer, Any},
-    trace::TraceLayer,
-    compression::CompressionLayer,
-    limit::RequestBodyLimitLayer,
-};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 
 mod config;
@@ -16,6 +10,7 @@ mod middleware;
 mod models;
 mod services;
 mod music;
+mod repositories;
 mod routes;
 
 use config::AppConfig;

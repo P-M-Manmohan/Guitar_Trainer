@@ -5,7 +5,7 @@ use axum::{
 
 
 use crate::{
-    handlers::scales,
+    handlers::{chords, scales},
     AppState,
 };
 
@@ -20,4 +20,8 @@ pub fn chord_router() -> Router<AppState> {
                 "/scales/:root/minor",
                 get(scales::get_minor_scale),
             )
+        .route(
+                "/chords/:key/:suffix",
+                get(chords::get_chord),
+        )
 }
