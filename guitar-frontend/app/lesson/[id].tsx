@@ -3,22 +3,22 @@ import { lessons } from "../../src/data/lessons";
 import LessonDetailScreen from "../../src/screens/LessonDetailScreen";
 
 export default function LessonPage() {
-  const { id } = useLocalSearchParams();
+  const { id, title, description, duration } = useLocalSearchParams();
 
   const lesson = lessons.find(
     (lesson) => lesson.id === Number(id)
   );
 
-  if (!lesson) {
+  if (!lesson && !title) {
     return null;
   }
 
   return (
     <LessonDetailScreen
-      id={lesson.id}
-      title={lesson.title}
-      description={lesson.description}
-      duration={lesson.duration}
+      id={lesson?.id || Number(id)}
+      title={String(title || lesson?.title || "Lesson")}
+      description={String(description || lesson?.description || "")}
+      duration={String(duration || lesson?.duration || "")}
     />
   );
 }

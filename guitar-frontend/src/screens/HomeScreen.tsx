@@ -1,11 +1,14 @@
 import { useRouter } from "expo-router";
+import { useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 
+import MetronomeModal from "../components/MetronomeModal";
 import HomeButton from "../components/HomeButton";
 import { useProgressStore } from "../store/progressStore";
 
 export default function HomeScreen() {
   const router = useRouter();
+  const [metronomeVisible, setMetronomeVisible] = useState(false);
 
   const completedLessons = useProgressStore(
     (state) => state.completedLessons
@@ -92,7 +95,7 @@ export default function HomeScreen() {
             fontSize: 16,
           }}
         >
-          Today's Practice
+          {"Today's Practice"}
         </Text>
 
         <Text
@@ -119,7 +122,12 @@ export default function HomeScreen() {
       {/* Start Practice */}
 
       <TouchableOpacity
-        onPress={() => router.push("/practice")}
+        onPress={() =>
+          router.push({
+            pathname: "/practice-session",
+            params: { source: "Home Practice" },
+          })
+        }
         style={{
           backgroundColor: "#3B82F6",
           padding: 20,
@@ -160,6 +168,11 @@ export default function HomeScreen() {
       <HomeButton
         title="Chord Library"
         onPress={() => router.push("/chords")}
+      />
+
+      <HomeButton
+        title="Metronome"
+        onPress={() => setMetronomeVisible(true)}
       />
 
       <HomeButton
@@ -219,6 +232,11 @@ export default function HomeScreen() {
           ✓ Completed Lesson 1
         </Text>
       </View>
+
+      <MetronomeModal
+        visible={metronomeVisible}
+        onClose={() => setMetronomeVisible(false)}
+      />
     </ScrollView>
   );
 }

@@ -1,28 +1,51 @@
 import { router } from "expo-router";
+import { useEffect, useState } from "react";
 import { ScrollView, Text, TouchableOpacity } from "react-native";
-import { lessons } from "../data/lessons";
 
-function LessonCard({
-  id,
-  title,
-  description,
-  duration,
-  completed,
-}: {
+import { SERVER_ERROR, apiGet } from "../services/api";
+
+type Lesson = {
   id: number;
   title: string;
   description: string;
-  duration: string;
-  completed: boolean;
+  duration?: string;
+  duration_mins?: number;
+  level?: string;
+  difficulty?: number | string;
+  completed?: boolean;
+};
+
+function lessonLevel(lesson: Lesson) {
+  if (lesson.level) {
+    return lesson.level;
+  }
+  if (lesson.difficulty === 1 || lesson.difficulty === "Beginner") {
+    return "Beginner";
+  }
+  if (lesson.difficulty === 2 || lesson.difficulty === "Intermediate") {
+    return "Intermediate";
+  }
+  return "Advanced";
+}
+
+function LessonCard({
+  lesson,
+}: {
+  lesson: Lesson;
 }) {
   return (
     <TouchableOpacity
       onPress={() =>
-    router.push({
-      pathname: "/lesson/[id]",
-      params: { id: String(id) },
-    })
-  }
+        router.push({
+          pathname: "/lesson/[id]",
+          params: {
+            id: String(lesson.id),
+            title: lesson.title,
+            description: lesson.description,
+            duration: lesson.duration || `${lesson.duration_mins || 0} min`,
+          },
+        })
+      }
       style={{
         backgroundColor: "#1F2937",
         padding: 18,
@@ -37,8 +60,8 @@ function LessonCard({
           fontWeight: "bold",
         }}
       >
-        {completed ? "✅ " : "🎸 "}
-        {title}
+        {lesson.completed ? "✓ " : ""}
+        {lesson.title}
       </Text>
 
       <Text
@@ -47,7 +70,7 @@ function LessonCard({
           marginTop: 6,
         }}
       >
-        {description}
+        {lesson.description}
       </Text>
 
       <Text
@@ -56,24 +79,30 @@ function LessonCard({
           marginTop: 8,
         }}
       >
-        {duration}
+        {lesson.duration || `${lesson.duration_mins || 0} min`}
       </Text>
     </TouchableOpacity>
   );
 }
 
 export default function LessonScreen() {
-  const beginnerLessons = lessons.filter(
-    lesson => lesson.level === "Beginner"
-  );
+  const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [error, setError] = useState("");
 
-  const intermediateLessons = lessons.filter(
-    lesson => lesson.level === "Intermediate"
-  );
+  useEffect(() => {
+    apiGet<Lesson[]>("/lessons")
+      .then((response) => {
+        setLessons(Array.isArray(response) ? response : []);
+        setError("");
+      })
+      .catch(() => setError(SERVER_ERROR));
+  }, []);
 
-  const advancedLessons = lessons.filter(
-    lesson => lesson.level === "Advanced"
-  );
+  const grouped = {
+    Beginner: lessons.filter((lesson) => lessonLevel(lesson) === "Beginner"),
+    Intermediate: lessons.filter((lesson) => lessonLevel(lesson) === "Intermediate"),
+    Advanced: lessons.filter((lesson) => lessonLevel(lesson) === "Advanced"),
+  };
 
   return (
     <ScrollView
@@ -94,79 +123,33 @@ export default function LessonScreen() {
           marginTop: 50,
         }}
       >
-        📚 Lessons
+        Lessons
       </Text>
 
-      {/* Beginner */}
+      {!!error && (
+        <Text style={{ color: "#EF4444", marginTop: 20, fontSize: 18 }}>
+          {error}
+        </Text>
+      )}
 
-      <Text
-        style={{
-          color: "white",
-          fontSize: 22,
-          fontWeight: "bold",
-          marginTop: 30,
-        }}
-      >
-        Beginner
-      </Text>
+      {(["Beginner", "Intermediate", "Advanced"] as const).map((level) => (
+        <ScrollView key={level} scrollEnabled={false}>
+          <Text
+            style={{
+              color: "white",
+              fontSize: 22,
+              fontWeight: "bold",
+              marginTop: 30,
+            }}
+          >
+            {level}
+          </Text>
 
-      {beginnerLessons.map(lesson => (
-        <LessonCard
-          key={lesson.id}
-          id={lesson.id}
-          title={lesson.title}
-          description={lesson.description}
-          duration={lesson.duration}
-          completed={lesson.completed}
-        />
-      ))}
-
-      {/* Intermediate */}
-
-      <Text
-        style={{
-          color: "white",
-          fontSize: 22,
-          fontWeight: "bold",
-          marginTop: 35,
-        }}
-      >
-        Intermediate
-      </Text>
-
-      {intermediateLessons.map(lesson => (
-        <LessonCard
-          key={lesson.id}
-          id={lesson.id}
-          title={lesson.title}
-          description={lesson.description}
-          duration={lesson.duration}
-          completed={lesson.completed}
-        />
-      ))}
-
-      {/* Advanced */}
-
-      <Text
-        style={{
-          color: "white",
-          fontSize: 22,
-          fontWeight: "bold",
-          marginTop: 35,
-        }}
-      >
-        Advanced
-      </Text>
-
-      {advancedLessons.map(lesson => (
-        <LessonCard
-          key={lesson.id}
-          id={lesson.id}
-          title={lesson.title}
-          description={lesson.description}
-          duration={lesson.duration}
-          completed={lesson.completed}
-        />
+          {!error &&
+            grouped[level].map((lesson) => (
+              <LessonCard key={lesson.id} lesson={lesson} />
+            ))}
+        </ScrollView>
       ))}
     </ScrollView>
   );

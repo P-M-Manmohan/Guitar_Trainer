@@ -10,9 +10,17 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.guitar-coach-sdk54"
+      "bundleIdentifier": "com.anonymous.guitar-coach-sdk54",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Guitar Trainer uses the front camera to record practice sessions.",
+        "NSMicrophoneUsageDescription": "Guitar Trainer uses the microphone while recording practice sessions."
+      }
     },
     "android": {
+      "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO"
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -28,6 +36,14 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Guitar Trainer to use your front camera for practice recordings.",
+          "microphonePermission": "Allow Guitar Trainer to record audio during practice sessions.",
+          "recordAudioAndroid": true
+        }
+      ],
       [
         "expo-splash-screen",
         {
