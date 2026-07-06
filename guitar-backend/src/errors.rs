@@ -40,6 +40,18 @@ pub enum AppError {
 
     #[error("S3 error: {0}")]
     Storage(String),
+
+    #[error("Email already exists")]
+    EmailAlreadyExists(String),
+
+    #[error("Invalid credentials")]
+    InvalidCredentials(String),
+
+    #[error("Password hashing error")]
+    PasswordHash(String),
+
+    #[error("jwt error")]
+    Jwt(String),
 }
 
 impl IntoResponse for AppError {
@@ -53,6 +65,10 @@ impl IntoResponse for AppError {
             AppError::Conflict(msg)      => (StatusCode::CONFLICT, msg.clone()),
             AppError::RateLimited        => (StatusCode::TOO_MANY_REQUESTS, "too many requests".into()),
             AppError::Validation(msg)    => (StatusCode::UNPROCESSABLE_ENTITY, msg.clone()),
+            AppError::EmailAlreadyExists(msg) => (StatusCode::CONFLICT, msg.clone()),
+            AppError::InvalidCredentials(msg) => (StatusCode::CONFLICT, msg.clone()),
+            AppError::PasswordHash(msg)  => (StatusCode::INTERNAL_SERVER_ERROR, msg.clone()),
+            AppError::Jwt(msg)           => (StatusCode::UNAUTHORIZED, msg.clone()),
             AppError::Database(e) => {
                 // Unique constraint = conflict, everything else = 500
                 if let sqlx::Error::Database(ref db_err) = e {

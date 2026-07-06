@@ -1,5 +1,4 @@
 use crate::models::chord::Chord;
-use redis::AsyncCommands;
 
 
 pub fn build_chords(scale: &[String], qualities: &[&str; 7], roman: &[&str; 7],) -> Vec<Chord> {

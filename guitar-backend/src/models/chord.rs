@@ -1,3 +1,5 @@
+use core::option::Option;
+
 use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -21,6 +23,9 @@ pub struct ChordPosition {
     pub barres: Option<i32>,
 
     pub capo: bool,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub diagram: Option<String>,
 }
 
 #[derive(Debug, Serialize)]

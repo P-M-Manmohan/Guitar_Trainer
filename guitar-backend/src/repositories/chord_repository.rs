@@ -5,6 +5,8 @@ use crate::models::chord::{
     ChordResponse,
 };
 
+//use crate::services::renderer::render_diagram;
+
 pub async fn get_chord(
         pool: &PgPool,
         key: &str,
@@ -48,6 +50,9 @@ pub async fn get_chord(
             .fetch_all(pool)
             .await?;
 
+        println!("{:?}",rows);
+
+
         let positions = rows
             .into_iter()
             .map(|row| ChordPosition {
@@ -56,6 +61,7 @@ pub async fn get_chord(
                 fingers: row.fingers,
                 barres: row.barres,
                 capo:row.capo,
+                diagram: None
             })
             .collect();
 

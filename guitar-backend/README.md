@@ -39,6 +39,9 @@ Check they're healthy:
 ```bash
 docker compose ps
 docker compose logs postgres
+
+docker compose up -d postgres redis pgbouncer
+
 ```
  
 ## 4. Configure environment variables

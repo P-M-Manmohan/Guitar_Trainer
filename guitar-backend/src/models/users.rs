@@ -1,35 +1,29 @@
-use chrono::{DateTime, Utc};
+// models/user.rs
+
 use serde::{Deserialize, Serialize};
-use sqlx::FromRow;
-use uuid::Uuid;
 
+#[derive(Deserialize)]
+pub struct SignupRequest {
+    pub username: String,
+    pub email: String,
+    pub password: String,
+}
 
-#[derive(Debug, FromRow)]
+#[derive(Deserialize)]
+pub struct LoginRequest {
+    pub email: String,
+    pub password: String,
+}
+
+#[derive(sqlx::FromRow)]
 pub struct User {
-    pub id: Uuid,
+    pub id: i64,
+    pub username: String,
     pub email: String,
     pub password_hash: String,
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Debug, FromRow, Serialize)]
-pub struct UserProfile {
-    pub id: Uuid,
-    pub user_id: Uuid,
-    pub display_name: String,
-    pub experience_level: ExperienceLevel,
-    pub preferred_tuning_id: Option<Uuid>,
-    pub created_at: DateTime<Utc>,
+#[derive(Serialize)]
+pub struct AuthResponse {
+    pub token: String,
 }
-
-#[derive(Debug, sqlx::Type, Serialize, Deserialize, Clone)]
-#[sqlx(type_name = "experience_level", rename_all = "lowercase")]
-pub enum ExperienceLevel {
-    Beginner,
-    Intermediate,
-    Advanced,
-}
-
-
-
