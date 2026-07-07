@@ -1,3 +1,4 @@
+
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useState } from "react";
@@ -8,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+
 
 import {
   SERVER_ERROR,
@@ -126,6 +128,7 @@ export default function ChordLibraryScreen() {
       setError(SERVER_ERROR);
     } finally {
       setLoading(false);
+
     }
   };
 
@@ -133,21 +136,22 @@ export default function ChordLibraryScreen() {
     <ScrollView
       style={{ flex: 1, backgroundColor: "#121212" }}
       contentContainerStyle={{
+
         padding: 20,
-        paddingBottom: 50,
       }}
     >
       <Text
         style={{
           color: "white",
-          fontSize: 32,
+          fontSize: 30,
           fontWeight: "bold",
-          marginTop: 50,
+          marginTop: 60,
           marginBottom: 30,
         }}
       >
         Chord Library
       </Text>
+
 
       <View
         style={{
@@ -257,5 +261,6 @@ export default function ChordLibraryScreen() {
         );
       })}
     </ScrollView>
+
   );
 }

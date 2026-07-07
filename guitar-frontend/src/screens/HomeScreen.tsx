@@ -104,12 +104,14 @@ export default function HomeScreen() {
       {/* Start Practice */}
 
       <TouchableOpacity
+
         onPress={() =>
           router.push({
             pathname: "/practice-session",
             params: { source: "Home Practice" },
           })
         }
+
         style={{
           backgroundColor: "#3B82F6",
           padding: 20,
