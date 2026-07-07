@@ -29,6 +29,7 @@ export default function PracticeSessionScreen() {
   const [recordingName, setRecordingName] = useState("");
   const [saveVisible, setSaveVisible] = useState(false);
   const [metronomeVisible, setMetronomeVisible] = useState(false);
+  const [metronomePlaying, setMetronomePlaying] = useState(false);
 
   const hasPermission =
     cameraPermission?.granted && microphonePermission?.granted;
@@ -50,6 +51,8 @@ export default function PracticeSessionScreen() {
         maxDuration: 60 * 30,
       });
       if (video?.uri) {
+        setRecording(false);
+        setMetronomePlaying(false);
         setTempUri(video.uri);
         setDurationMs(Date.now() - (startedAtRef.current || Date.now()));
         setSaveVisible(true);
@@ -64,8 +67,10 @@ export default function PracticeSessionScreen() {
     if (recording && cameraRef.current) {
       cameraRef.current.stopRecording();
       setRecording(false);
+      setMetronomePlaying(false);
       return;
     }
+    setMetronomePlaying(false);
     router.back();
   };
 
@@ -78,7 +83,7 @@ export default function PracticeSessionScreen() {
       await savePracticeRecording({
         tempUri,
         name: recordingName,
-        durationMs,
+        durationSeconds: Math.max(1, Math.round(durationMs / 1000)),
         source,
       });
       setSaveVisible(false);
@@ -86,6 +91,13 @@ export default function PracticeSessionScreen() {
     } catch {
       Alert.alert("Save Error", "Could not save this recording locally.");
     }
+  };
+
+  const cancelSave = () => {
+    setSaveVisible(false);
+    setTempUri(null);
+    setMetronomePlaying(false);
+    router.back();
   };
 
   if (!hasPermission) {
@@ -203,7 +215,7 @@ export default function PracticeSessionScreen() {
         visible={saveVisible}
         transparent
         animationType="fade"
-        onRequestClose={() => setSaveVisible(false)}
+        onRequestClose={cancelSave}
       >
         <View
           style={{
@@ -245,31 +257,62 @@ export default function PracticeSessionScreen() {
               }}
             />
 
-            <TouchableOpacity
-              onPress={saveRecording}
+            <View
               style={{
-                backgroundColor: "#22C55E",
-                padding: 15,
-                borderRadius: 12,
+                flexDirection: "row",
+                gap: 12,
                 marginTop: 16,
               }}
             >
-              <Text
+              <TouchableOpacity
+                onPress={cancelSave}
                 style={{
-                  color: "white",
-                  fontWeight: "bold",
-                  textAlign: "center",
+                  flex: 1,
+                  backgroundColor: "#374151",
+                  padding: 15,
+                  borderRadius: 12,
                 }}
               >
-                Save
-              </Text>
-            </TouchableOpacity>
+                <Text
+                  style={{
+                    color: "white",
+                    fontWeight: "bold",
+                    textAlign: "center",
+                  }}
+                >
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={saveRecording}
+                style={{
+                  flex: 1,
+                  backgroundColor: "#22C55E",
+                  padding: 15,
+                  borderRadius: 12,
+                }}
+              >
+                <Text
+                  style={{
+                    color: "white",
+                    fontWeight: "bold",
+                    textAlign: "center",
+                  }}
+                >
+                  Save
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
 
       <MetronomeModal
         visible={metronomeVisible}
+        keepPlayingOnClose
+        playing={metronomePlaying}
+        onPlayingChange={setMetronomePlaying}
         onClose={() => setMetronomeVisible(false)}
       />
     </View>

@@ -5,15 +5,13 @@ import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SERVER_ERROR, apiGet } from "../services/api";
 import {
   formatDuration,
+  getDurationSeconds,
   getPracticeRecordings,
 } from "../utils/practiceRecordings";
 
 type UserProfile = {
   lessons_completed?: number;
   completedLessons?: number;
-  current_streak?: number;
-  currentStreak?: number;
-  level?: string;
 };
 
 function StatCard({
@@ -67,20 +65,17 @@ export default function ProfileScreen() {
   useFocusEffect(
     useCallback(() => {
       getPracticeRecordings().then((items) => {
-        const totalMs = items.reduce(
-          (sum, item) => sum + item.durationMs,
+        const totalSeconds = items.reduce(
+          (sum, item) => sum + getDurationSeconds(item),
           0
         );
-        setPracticeTime(formatDuration(totalMs));
+        setPracticeTime(formatDuration(totalSeconds));
       });
     }, [])
   );
 
   const completed =
     profile?.lessons_completed ?? profile?.completedLessons ?? 0;
-  const streak =
-    profile?.current_streak ?? profile?.currentStreak ?? 0;
-  const level = profile?.level ?? "Beginner";
 
   return (
     <ScrollView
@@ -109,15 +104,7 @@ export default function ProfileScreen() {
         label="Lessons Completed"
         value={error ? SERVER_ERROR : completed}
       />
-      <StatCard
-        label="Current Streak"
-        value={error ? SERVER_ERROR : `${streak} Days`}
-      />
       <StatCard label="Practice Time" value={practiceTime} />
-      <StatCard
-        label="Level"
-        value={error ? SERVER_ERROR : level}
-      />
 
       <TouchableOpacity
         onPress={() => router.push("/practice-history")}
@@ -139,50 +126,6 @@ export default function ProfileScreen() {
           Practice History
         </Text>
       </TouchableOpacity>
-
-      <View
-        style={{
-          backgroundColor: "#1F2937",
-          borderRadius: 15,
-          padding: 20,
-          marginTop: 20,
-        }}
-      >
-        <Text
-          style={{
-            color: "white",
-            fontSize: 22,
-            fontWeight: "bold",
-            marginBottom: 15,
-          }}
-        >
-          Achievements
-        </Text>
-
-        <Text style={{ color: "white", fontSize: 16 }}>
-          {completed >= 1 ? "✓" : "□"} First Lesson Completed
-        </Text>
-
-        <Text
-          style={{
-            color: "white",
-            fontSize: 16,
-            marginTop: 10,
-          }}
-        >
-          {completed >= 5 ? "✓" : "□"} Five Lessons Completed
-        </Text>
-
-        <Text
-          style={{
-            color: "white",
-            fontSize: 16,
-            marginTop: 10,
-          }}
-        >
-          {practiceTime !== "00:00:00" ? "✓" : "□"} First Practice Recording
-        </Text>
-      </View>
     </ScrollView>
   );
 }

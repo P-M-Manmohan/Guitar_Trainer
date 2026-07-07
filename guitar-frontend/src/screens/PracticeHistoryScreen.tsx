@@ -4,8 +4,10 @@ import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 import {
   PracticeRecording,
+  deletePracticeRecording,
   formatDateTime,
   formatDuration,
+  getDurationSeconds,
   getPracticeRecordings,
 } from "../utils/practiceRecordings";
 
@@ -17,6 +19,18 @@ export default function PracticeHistoryScreen() {
       getPracticeRecordings().then(setRecordings);
     }, [])
   );
+
+  const openRecording = (recording: PracticeRecording) => {
+    router.push({
+      pathname: "/recording/[id]",
+      params: { id: recording.id },
+    });
+  };
+
+  const deleteRecording = async (recording: PracticeRecording) => {
+    const next = await deletePracticeRecording(recording.id);
+    setRecordings(next);
+  };
 
   return (
     <ScrollView
@@ -53,14 +67,8 @@ export default function PracticeHistoryScreen() {
       )}
 
       {recordings.map((recording) => (
-        <TouchableOpacity
+        <View
           key={recording.id}
-          onPress={() =>
-            router.push({
-              pathname: "/recording/[id]",
-              params: { id: recording.id },
-            })
-          }
           style={{
             backgroundColor: "#1F2937",
             borderRadius: 15,
@@ -68,24 +76,42 @@ export default function PracticeHistoryScreen() {
             marginTop: 16,
           }}
         >
-          <Text
+          <TouchableOpacity onPress={() => openRecording(recording)}>
+            <Text
+              style={{
+                color: "white",
+                fontSize: 18,
+                fontWeight: "bold",
+              }}
+            >
+              {recording.name}
+            </Text>
+
+            <Text style={{ color: "#BBBBBB", marginTop: 8 }}>
+              {formatDateTime(recording.createdAt)}
+            </Text>
+
+            <Text style={{ color: "#3B82F6", marginTop: 8 }}>
+              Duration {formatDuration(getDurationSeconds(recording))}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => deleteRecording(recording)}
             style={{
-              color: "white",
-              fontSize: 18,
-              fontWeight: "bold",
+              alignSelf: "flex-start",
+              backgroundColor: "#EF4444",
+              borderRadius: 10,
+              marginTop: 14,
+              paddingHorizontal: 14,
+              paddingVertical: 10,
             }}
           >
-            {recording.name}
-          </Text>
-
-          <Text style={{ color: "#BBBBBB", marginTop: 8 }}>
-            {formatDateTime(recording.createdAt)}
-          </Text>
-
-          <Text style={{ color: "#3B82F6", marginTop: 8 }}>
-            Duration {formatDuration(recording.durationMs)}
-          </Text>
-        </TouchableOpacity>
+            <Text style={{ color: "white", fontWeight: "bold" }}>
+              Delete
+            </Text>
+          </TouchableOpacity>
+        </View>
       ))}
     </ScrollView>
   );

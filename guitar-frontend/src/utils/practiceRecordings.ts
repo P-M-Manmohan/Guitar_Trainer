@@ -5,7 +5,8 @@ export type PracticeRecording = {
   name: string;
   uri: string;
   createdAt: string;
-  durationMs: number;
+  durationSeconds: number;
+  durationMs?: number;
   source?: string;
 };
 
@@ -39,7 +40,7 @@ export async function getPracticeRecordings(): Promise<PracticeRecording[]> {
 export async function savePracticeRecording(input: {
   tempUri: string;
   name: string;
-  durationMs: number;
+  durationSeconds: number;
   source?: string;
 }): Promise<PracticeRecording> {
   await ensureDirectory();
@@ -56,7 +57,7 @@ export async function savePracticeRecording(input: {
     name: input.name.trim() || "Practice Session",
     uri: destinationUri,
     createdAt: new Date().toISOString(),
-    durationMs: input.durationMs,
+    durationSeconds: input.durationSeconds,
     source: input.source,
   };
 
@@ -66,12 +67,35 @@ export async function savePracticeRecording(input: {
   return recording;
 }
 
-export function formatDuration(totalMs: number) {
-  const totalMinutes = Math.floor(totalMs / 60000);
-  const days = Math.floor(totalMinutes / 1440);
-  const hours = Math.floor((totalMinutes % 1440) / 60);
-  const minutes = totalMinutes % 60;
-  return `${String(days).padStart(2, "0")}:${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+export async function deletePracticeRecording(id: string) {
+  const existing = await getPracticeRecordings();
+  const recording = existing.find((item) => item.id === id);
+  if (recording) {
+    const info = await FileSystem.getInfoAsync(recording.uri);
+    if (info.exists) {
+      await FileSystem.deleteAsync(recording.uri, { idempotent: true });
+    }
+  }
+
+  const next = existing.filter((item) => item.id !== id);
+  await ensureDirectory();
+  await FileSystem.writeAsStringAsync(INDEX_PATH, JSON.stringify(next));
+  return next;
+}
+
+export function getDurationSeconds(recording: PracticeRecording) {
+  if (typeof recording.durationSeconds === "number") {
+    return recording.durationSeconds;
+  }
+  return Math.max(0, Math.round((recording.durationMs || 0) / 1000));
+}
+
+export function formatDuration(totalSeconds: number) {
+  const safeSeconds = Math.max(0, Math.floor(totalSeconds));
+  const hours = Math.floor(safeSeconds / 3600);
+  const minutes = Math.floor((safeSeconds % 3600) / 60);
+  const seconds = safeSeconds % 60;
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
 export function formatDateTime(iso: string) {

@@ -1,6 +1,6 @@
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useVideoPlayer, VideoView } from "expo-video";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 
 import {
@@ -12,13 +12,13 @@ export default function RecordingPlayerScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const [recording, setRecording] = useState<PracticeRecording | null>(null);
-  const [playing, setPlaying] = useState(false);
+  const recordingId = useMemo(() => (typeof id === "string" ? id : ""), [id]);
 
   useEffect(() => {
     getPracticeRecordings().then((items) => {
-      setRecording(items.find((item) => item.id === id) || null);
+      setRecording(items.find((item) => item.id === recordingId) || null);
     });
-  }, [id]);
+  }, [recordingId]);
 
   const player = useVideoPlayer(recording?.uri || "", (videoPlayer) => {
     videoPlayer.loop = false;
@@ -34,6 +34,8 @@ export default function RecordingPlayerScreen() {
           padding: 24,
         }}
       >
+        <Stack.Screen options={{ title: "Recording" }} />
+
         <Text style={{ color: "white", textAlign: "center" }}>
           Recording not found.
         </Text>
@@ -55,75 +57,17 @@ export default function RecordingPlayerScreen() {
     );
   }
 
-  const togglePlayback = () => {
-    if (playing) {
-      player.pause();
-      setPlaying(false);
-    } else {
-      player.play();
-      setPlaying(true);
-    }
-  };
-
   return (
     <View style={{ flex: 1, backgroundColor: "#000" }}>
+      <Stack.Screen options={{ title: recording.name }} />
+
       <VideoView
         player={player}
         style={{ flex: 1 }}
         allowsFullscreen
         allowsPictureInPicture
+        nativeControls
       />
-
-      <View
-        style={{
-          position: "absolute",
-          bottom: 40,
-          left: 20,
-          right: 20,
-          flexDirection: "row",
-          gap: 12,
-        }}
-      >
-        <TouchableOpacity
-          onPress={togglePlayback}
-          style={{
-            flex: 1,
-            backgroundColor: "#3B82F6",
-            padding: 16,
-            borderRadius: 14,
-          }}
-        >
-          <Text
-            style={{
-              color: "white",
-              textAlign: "center",
-              fontWeight: "bold",
-            }}
-          >
-            {playing ? "Pause" : "Play"}
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={{
-            flex: 1,
-            backgroundColor: "#EF4444",
-            padding: 16,
-            borderRadius: 14,
-          }}
-        >
-          <Text
-            style={{
-              color: "white",
-              textAlign: "center",
-              fontWeight: "bold",
-            }}
-          >
-            Close
-          </Text>
-        </TouchableOpacity>
-      </View>
     </View>
   );
 }

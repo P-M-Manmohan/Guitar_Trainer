@@ -1,17 +1,30 @@
-import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 import MetronomeModal from "../components/MetronomeModal";
 import HomeButton from "../components/HomeButton";
-import { useProgressStore } from "../store/progressStore";
+import {
+  formatDuration,
+  getDurationSeconds,
+  getPracticeRecordings,
+} from "../utils/practiceRecordings";
 
 export default function HomeScreen() {
   const router = useRouter();
   const [metronomeVisible, setMetronomeVisible] = useState(false);
+  const [todayPractice, setTodayPractice] = useState("00:00:00");
 
-  const completedLessons = useProgressStore(
-    (state) => state.completedLessons
+  useFocusEffect(
+    useCallback(() => {
+      getPracticeRecordings().then((items) => {
+        const today = new Date().toDateString();
+        const totalSeconds = items
+          .filter((item) => new Date(item.createdAt).toDateString() === today)
+          .reduce((sum, item) => sum + getDurationSeconds(item), 0);
+        setTodayPractice(formatDuration(totalSeconds));
+      });
+    }, [])
   );
 
   return (
@@ -48,37 +61,6 @@ export default function HomeScreen() {
         Ready to practice today?
       </Text>
 
-      {/* Progress */}
-
-      <View
-        style={{
-          backgroundColor: "#1F2937",
-          padding: 20,
-          borderRadius: 15,
-          marginTop: 25,
-        }}
-      >
-        <Text
-          style={{
-            color: "white",
-            fontSize: 20,
-            fontWeight: "bold",
-          }}
-        >
-          Progress
-        </Text>
-
-        <Text
-          style={{
-            color: "#BBBBBB",
-            marginTop: 10,
-            fontSize: 16,
-          }}
-        >
-          Lessons Completed: {completedLessons.length}
-        </Text>
-      </View>
-
       {/* Today's Practice */}
 
       <View
@@ -106,7 +88,7 @@ export default function HomeScreen() {
             marginTop: 10,
           }}
         >
-          0 min
+          {todayPractice}
         </Text>
 
         <Text
@@ -176,62 +158,9 @@ export default function HomeScreen() {
       />
 
       <HomeButton
-        title="Progress"
-        onPress={() => router.push("/profile")}
-      />
-
-      <HomeButton
         title="Tuner"
         onPress={() => {}}
       />
-
-      {/* Recent Activity */}
-
-      <Text
-        style={{
-          color: "white",
-          fontSize: 22,
-          fontWeight: "bold",
-          marginTop: 35,
-        }}
-      >
-        Recent Activity
-      </Text>
-
-      <View
-        style={{
-          backgroundColor: "#1F2937",
-          padding: 20,
-          borderRadius: 15,
-          marginTop: 15,
-        }}
-      >
-        <Text
-          style={{
-            color: "white",
-          }}
-        >
-          ✓ Learned G Major
-        </Text>
-
-        <Text
-          style={{
-            color: "white",
-            marginTop: 10,
-          }}
-        >
-          ✓ Practiced 12 minutes
-        </Text>
-
-        <Text
-          style={{
-            color: "white",
-            marginTop: 10,
-          }}
-        >
-          ✓ Completed Lesson 1
-        </Text>
-      </View>
 
       <MetronomeModal
         visible={metronomeVisible}
