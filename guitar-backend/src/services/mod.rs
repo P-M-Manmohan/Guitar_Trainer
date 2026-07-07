@@ -4,3 +4,6 @@ pub mod cache;
 pub mod storage;
 pub mod scale_service;
 pub mod chord_service; 
+pub mod diagram;
+pub mod jwt;
+//pub mod renderer;
