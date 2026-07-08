@@ -5,3 +5,4 @@ pub mod practice;
 pub mod progress;
 pub mod vision;
 pub mod scales;
+pub mod user;

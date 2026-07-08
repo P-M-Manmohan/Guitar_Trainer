@@ -1,19 +1,11 @@
 use chrono::{Duration, Utc};
 use jsonwebtoken::{encode, decode, Header, Validation, EncodingKey, DecodingKey};
-use serde::{Deserialize, Serialize};
 use std::env;
 
 use crate::errors::AppError;
+use crate::models::jwt::Claims;
 
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Claims {
-    /// User ID
-    pub sub: i64,
-
-    /// Expiration timestamp
-    pub exp: usize,
-}
 
 pub fn generate(user_id: i64) -> Result<String, AppError> {
 
