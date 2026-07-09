@@ -67,6 +67,7 @@ async fn main() -> anyhow::Result<()> {
     .merge(routes::chord::chord_router())
     .merge(routes::auth::auth_router())
     .merge(routes::profile::profile_router())
+    .merge(routes::lessons::lessons_router())
     .layer(axum_middleware::from_fn_with_state(
         state.clone(),
         mw::auth::optional_auth,

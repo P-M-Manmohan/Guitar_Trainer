@@ -19,7 +19,7 @@ CREATE TABLE users
 
     lessons_completed INTEGER NOT NULL DEFAULT 0,
 
-    COLUMN updated_at TIMESTAMPTZ DEFAULT NOW()
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 /*
 CREATE TABLE user_profiles (

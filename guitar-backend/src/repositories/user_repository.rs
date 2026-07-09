@@ -48,6 +48,7 @@ pub async fn update_lessons(
     pool: &PgPool,
     user_id: i64,
     change: i32,
+    lesson_id: i64,
 ) -> Result<(), sqlx::Error> {
 
     sqlx::query!(
@@ -62,6 +63,20 @@ pub async fn update_lessons(
     )
     .execute(pool)
     .await?;
+
+    sqlx::query!(
+        r#"
+        INSERT INTO lessons_completed
+            (user_id,
+             lesson_id)
+        VALUES ($1, $2)
+        ON CONFLICT DO NOTHING;
+        "#,
+        user_id,
+        lesson_id
+        )
+        .execute(pool)
+        .await?;
 
     Ok(())
 }

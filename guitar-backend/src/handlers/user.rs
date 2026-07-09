@@ -1,6 +1,6 @@
 use axum::{
     http::StatusCode,
-    extract:: State,
+    extract:: {Path, State},
     Json,
 };
 
@@ -43,6 +43,7 @@ pub async fn practice_time(
 pub async fn lesson_complete(
         State(state): State<AppState>,
         user: AuthUser,
+        Path(id): Path<i64>,
         Json(req): Json<LessonCompletionRequest>
     ) -> Result<StatusCode, AppError> {
 
@@ -56,6 +57,7 @@ pub async fn lesson_complete(
         &state.db,
         user.id,
         req.complete,
+        id,
         ).await?;
 
     Ok(StatusCode::OK)

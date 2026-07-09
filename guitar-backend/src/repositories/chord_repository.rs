@@ -50,7 +50,6 @@ pub async fn get_chord(
             .fetch_all(pool)
             .await?;
 
-        println!("{:?}",rows);
 
 
         let positions = rows
