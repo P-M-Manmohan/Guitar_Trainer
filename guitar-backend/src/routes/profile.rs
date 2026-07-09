@@ -19,9 +19,5 @@ pub fn profile_router() -> Router<AppState> {
                 "/practice/time",
                 post(user::practice_time),
             )
-        .route(
-                "/lessons/:id/comp", 
-                post(user::lesson_complete),
-            )
 }
 

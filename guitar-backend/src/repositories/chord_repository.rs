@@ -3,7 +3,10 @@ use sqlx::PgPool;
 use crate::models::chord::{
     ChordPosition,
     ChordResponse,
+    ChordShape
 };
+
+use crate::services::diagram::render_chord;
 
 //use crate::services::renderer::render_diagram;
 
@@ -56,11 +59,17 @@ pub async fn get_chord(
             .into_iter()
             .map(|row| ChordPosition {
                 position_index: row.position_index,
-                frets: row.frets,
-                fingers: row.fingers,
+                frets: row.frets.clone(),
+                fingers: row.fingers.clone(),
                 barres: row.barres,
                 capo:row.capo,
-                diagram: None
+                diagram: render_chord(
+                    &ChordShape{
+                        frets: row.frets,
+                        fingers: row.fingers,
+                        barres: row.barres,
+                        capo:row.capo,
+                    })
             })
             .collect();
 

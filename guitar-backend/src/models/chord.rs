@@ -24,9 +24,23 @@ pub struct ChordPosition {
 
     pub capo: bool,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub diagram: Option<String>,
+    pub diagram: String,
 }
+
+#[derive(Debug, Serialize)]
+pub struct ChordShape {
+
+    pub frets: String,
+
+    pub fingers: String,
+
+    pub barres: Option<i32>,
+
+    pub capo: bool,
+
+}
+
+
 
 #[derive(Debug, Serialize)]
 pub struct ChordResponse {
@@ -35,4 +49,17 @@ pub struct ChordResponse {
     pub suffix: String,
 
     pub positions: Vec<ChordPosition>,
+}
+
+pub struct ParsedChord {
+    pub frets: Vec<Option<u8>>,
+    pub fingers: Vec<Option<u8>>,
+    pub barres: Vec<u8>,
+    pub start_fret: u8,
+}
+
+pub struct Barre {
+    pub fret: u8,
+    pub from_string: usize,
+    pub to_string: usize,
 }

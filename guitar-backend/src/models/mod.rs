@@ -10,3 +10,4 @@ pub mod response;
 pub mod voicing;
 pub mod request;
 pub mod jwt;
+pub mod svg;

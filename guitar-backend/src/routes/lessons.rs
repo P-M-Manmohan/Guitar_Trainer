@@ -1,9 +1,9 @@
 use axum::{
-    routing::get,
+    routing::{post, get},
     Router,
 };
 
-use crate::handlers::lessons;
+use crate::handlers::{user, lessons};
 
 use crate::{
     AppState,
@@ -18,6 +18,10 @@ pub fn lessons_router() -> Router<AppState> {
         .route(
                 "/lessons/:id",
                 get(lessons::get_lesson),
+            )
+        .route(
+                "/lessons/:id/comp", 
+                post(user::lesson_complete),
             )
 }
 
