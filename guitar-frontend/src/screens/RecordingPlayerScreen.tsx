@@ -24,22 +24,18 @@ export default function RecordingPlayerScreen() {
 
   const player = useVideoPlayer(recording?.uri || "", (videoPlayer) => {
     videoPlayer.loop = false;
+    videoPlayer.timeUpdateEventInterval = 0.25;
   });
-  const audioPlayer = useAudioPlayer(recording?.audioUri || null, {
-    updateInterval: 100,
-  });
+  const audioPlayer = useAudioPlayer(recording?.audioUri);
 
   useEffect(() => {
     player.muted = Boolean(recording?.audioUri);
-    player.timeUpdateEventInterval = recording?.audioUri ? 0.5 : 0;
   }, [player, recording?.audioUri]);
 
   useEventListener(player, "playingChange", ({ isPlaying }) => {
-    if (!recording?.audioUri) {
-      return;
-    }
+    if (!recording?.audioUri) return;
     if (isPlaying) {
-      void audioPlayer.seekTo(player.currentTime).then(() => audioPlayer.play());
+      audioPlayer.seekTo(player.currentTime).then(() => audioPlayer.play());
     } else {
       audioPlayer.pause();
     }
@@ -48,16 +44,17 @@ export default function RecordingPlayerScreen() {
   useEventListener(player, "timeUpdate", ({ currentTime }) => {
     if (
       recording?.audioUri &&
+      player.playing &&
       Math.abs(audioPlayer.currentTime - currentTime) > 0.3
     ) {
-      void audioPlayer.seekTo(currentTime);
+      audioPlayer.seekTo(currentTime).catch(() => {});
     }
   });
 
   useEventListener(player, "playToEnd", () => {
     if (recording?.audioUri) {
       audioPlayer.pause();
-      void audioPlayer.seekTo(0);
+      audioPlayer.seekTo(0).catch(() => {});
     }
   });
 

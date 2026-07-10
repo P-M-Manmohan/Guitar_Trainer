@@ -48,8 +48,8 @@ export async function savePracticeRecording(input: {
   await ensureDirectory();
 
   const id = `${Date.now()}`;
-  const videoExtension = input.tempUri.split("?")[0].match(/\.[a-z0-9]+$/i)?.[0] || ".mp4";
-  const destinationUri = `${RECORDINGS_DIR}${id}${videoExtension}`;
+  const extension = input.tempUri.toLowerCase().includes(".mp4") ? "mp4" : "mov";
+  const destinationUri = `${RECORDINGS_DIR}${id}.${extension}`;
   await FileSystem.copyAsync({
     from: input.tempUri,
     to: destinationUri,
@@ -89,10 +89,7 @@ export async function deletePracticeRecording(id: string) {
       await FileSystem.deleteAsync(recording.uri, { idempotent: true });
     }
     if (recording.audioUri) {
-      const audioInfo = await FileSystem.getInfoAsync(recording.audioUri);
-      if (audioInfo.exists) {
-        await FileSystem.deleteAsync(recording.audioUri, { idempotent: true });
-      }
+      await FileSystem.deleteAsync(recording.audioUri, { idempotent: true });
     }
   }
 

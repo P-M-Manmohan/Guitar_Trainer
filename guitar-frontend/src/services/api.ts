@@ -4,8 +4,11 @@ const configuredBaseUrl =
   process.env.EXPO_PUBLIC_API_BASE_URL ||
   Constants.expoConfig?.extra?.apiBaseUrl;
 
+const metroHost = Constants.expoConfig?.hostUri?.split(":")[0];
+
 export const API_BASE_URL =
-  configuredBaseUrl || "http://127.0.0.1:8080";
+  configuredBaseUrl ||
+  (metroHost ? `http://${metroHost}:8080` : "http://127.0.0.1:8080");
 
 export const SERVER_ERROR = "Server Error!";
 
@@ -20,9 +23,7 @@ export async function apiGet<T>(path: string): Promise<T> {
 export async function apiPost<T>(path: string, body: unknown): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
   if (!response.ok) {

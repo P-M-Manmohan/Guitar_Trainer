@@ -8,6 +8,7 @@ export type ExpectedFingerPosition = {
 export type ExpectedFingering = Record<string, ExpectedFingerPosition>;
 
 export type PracticeAnalysisResponse = {
+  target_chord: string;
   status: string;
   raw_status: string;
   stable_status: string;
@@ -19,8 +20,9 @@ export type PracticeAnalysisResponse = {
 };
 
 export type PracticeAnalysisRequest = {
+  mode: "selected" | "free";
   session_id: string;
-  target_chord: string;
+  target_chord?: string;
   image: string;
   image_format: "rgb";
   image_width: number;

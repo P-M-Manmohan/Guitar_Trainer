@@ -1,17 +1,18 @@
 import { useLocalSearchParams } from "expo-router";
-import { chords } from "../../src/data/chords";
 import ChordDetailScreen from "../../src/screens/ChordDetailScreen";
 
 export default function ChordDetailPage() {
   const { id, root, quality, name } = useLocalSearchParams();
+
   const chordId = String(id || root || "C");
-
-  const localChord = chords.find((chord) => String(chord.id) === chordId);
-
-  const detailChord = {
+  const selectedQuality = String(
+    quality || (chordId.toLowerCase().includes("m") ? "minor" : "major")
+  );
+  const selectedRoot = String(root || chordId.match(/^([A-G](?:#|b)?)/)?.[1] || "C");
+  const chord = {
     id: chordId,
-    name: String(name || localChord?.name || id || "Chord"),
-    category: String(quality || localChord?.type || "major"),
+    name: String(name || id || "Chord"),
+    category: selectedQuality,
     difficulty: "",
     description: "Practice this chord shape.",
     fingers: [],
@@ -19,11 +20,9 @@ export default function ChordDetailPage() {
 
   return (
     <ChordDetailScreen
-      chord={detailChord}
-      root={String(root || localChord?.scale || chordId.replace("m", ""))}
-      quality={String(
-        quality || localChord?.type.toLowerCase() || (chordId.includes("m") ? "minor" : "major"),
-      )}
+      chord={chord}
+      root={selectedRoot}
+      quality={selectedQuality}
     />
   );
 }

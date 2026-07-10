@@ -30,13 +30,13 @@ type BackendChord = {
   notes?: string[];
 };
 
-function getChordRoute(chord: BackendChord, fallbackRoot: string) {
+function chordRoute(chord: BackendChord, fallbackRoot: string) {
   const symbol = chord.symbol || fallbackRoot;
   const root = symbol.match(/^([A-G](?:#|b)?)/)?.[1] || fallbackRoot;
-  const qualityName = (chord.quality || "Major").toLowerCase();
-  const quality = qualityName.includes("diminished")
+  const backendQuality = (chord.quality || "major").toLowerCase();
+  const quality = backendQuality.includes("diminished")
     ? "diminished"
-    : qualityName.includes("minor")
+    : backendQuality.includes("minor")
       ? "minor"
       : "major";
 
@@ -232,7 +232,7 @@ export default function ChordLibraryScreen() {
       )}
 
       {chords.map((chord, index) => {
-        const { symbol, root, quality: chordQuality } = getChordRoute(chord, scale);
+        const { symbol, root, quality: chordQuality } = chordRoute(chord, scale);
         const name = chord.name || symbol;
         return (
           <TouchableOpacity

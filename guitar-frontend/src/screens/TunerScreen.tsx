@@ -1,415 +1,127 @@
-import {
-  AudioDataEvent,
-  useAudioRecorder,
-} from "@siteed/audio-studio";
-import { Ionicons } from "@expo/vector-icons";
-import {
-  requestRecordingPermissionsAsync,
-  setAudioModeAsync,
-} from "expo-audio";
-import { Stack } from "expo-router";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  ActivityIndicator,
-  Linking,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { useAudioRecorder } from "@siteed/audio-studio";
+import { Stack, useRouter } from "expo-router";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Text, TouchableOpacity, View } from "react-native";
 
 import {
-  GuitarStringTarget,
-  PitchReading,
-  STANDARD_TUNING,
-  centsBetween,
+  STANDARD_GUITAR_STRINGS,
+  centsFromTarget,
   detectPitch,
-  median,
-  nearestGuitarString,
 } from "../utils/pitchDetection";
 
-const SAMPLE_RATE = 16000;
-const IN_TUNE_CENTS = 5;
-
 export default function TunerScreen() {
+  const router = useRouter();
   const { startRecording, stopRecording } = useAudioRecorder();
-  const mountedRef = useRef(false);
-  const listeningRef = useRef(false);
-  const startingRef = useRef(false);
-  const frequencyHistoryRef = useRef<number[]>([]);
-  const lastSignalAtRef = useRef(0);
+  const [targetId, setTargetId] = useState("6");
+  const [frequency, setFrequency] = useState<number | null>(null);
+  const [listening, setListening] = useState(false);
+  const [error, setError] = useState("");
+  const mountedRef = useRef(true);
+  const target = STANDARD_GUITAR_STRINGS.find((item) => item.id === targetId)!;
+  const cents = frequency ? centsFromTarget(frequency, target.frequency) : null;
+  const clampedCents = Math.max(-50, Math.min(50, cents || 0));
+  const inTune = cents !== null && Math.abs(cents) <= 5;
 
-  const [selectedString, setSelectedString] =
-    useState<GuitarStringTarget | null>(null);
-  const [reading, setReading] = useState<PitchReading | null>(null);
-  const [state, setState] = useState<
-    "starting" | "listening" | "stopped" | "denied" | "error"
-  >("starting");
-
-  const processAudio = useCallback(async (event: AudioDataEvent) => {
-    if (!(event.data instanceof Float32Array)) {
-      return;
-    }
-
-    const detected = detectPitch(event.data, SAMPLE_RATE);
-    const now = Date.now();
-    if (!detected || detected.clarity < 0.68) {
-      if (now - lastSignalAtRef.current > 650) {
-        frequencyHistoryRef.current = [];
-        if (mountedRef.current) {
-          setReading(null);
-        }
-      }
-      return;
-    }
-
-    lastSignalAtRef.current = now;
-    const history = [...frequencyHistoryRef.current, detected.frequency].slice(-5);
-    frequencyHistoryRef.current = history;
-    if (mountedRef.current) {
-      setReading({ ...detected, frequency: median(history) });
-    }
-  }, []);
-
-  const beginListening = useCallback(async () => {
-    if (listeningRef.current || startingRef.current) {
-      return;
-    }
-
-    startingRef.current = true;
-    if (mountedRef.current) {
-      setState("starting");
-    }
-    try {
-      const permission = await requestRecordingPermissionsAsync();
-      if (!permission.granted) {
-        if (mountedRef.current) {
-          setState("denied");
-        }
-        return;
-      }
-
-      await setAudioModeAsync({
-        allowsRecording: true,
-        playsInSilentMode: true,
-        shouldPlayInBackground: false,
-        shouldRouteThroughEarpiece: false,
-      });
-      await startRecording({
-        sampleRate: SAMPLE_RATE,
-        channels: 1,
-        encoding: "pcm_32bit",
-        streamFormat: "float32",
-        interval: 120,
-        bufferDurationSeconds: 0.12,
-        keepAwake: false,
-        showNotification: false,
-        output: { primary: { enabled: false } },
-        android: { audioFocusStrategy: "interactive" },
-        ios: {
-          audioSession: {
-            category: "Record",
-            mode: "Measurement",
-          },
-        },
-        onAudioStream: processAudio,
-      });
-
-      if (!mountedRef.current) {
-        await stopRecording();
-        return;
-      }
-      listeningRef.current = true;
-      setState("listening");
-    } catch {
-      if (mountedRef.current) {
-        setState("error");
-      }
-    } finally {
-      startingRef.current = false;
-    }
-  }, [processAudio, startRecording, stopRecording]);
-
-  const endListening = useCallback(async () => {
-    if (!listeningRef.current) {
-      return;
-    }
-    listeningRef.current = false;
-    frequencyHistoryRef.current = [];
-    setReading(null);
-    if (mountedRef.current) {
-      setState("stopped");
-    }
+  const stopListening = useCallback(async () => {
     try {
       await stopRecording();
-      await setAudioModeAsync({ allowsRecording: false });
-    } catch {
-      if (mountedRef.current) {
-        setState("error");
-      }
-    }
+    } catch {}
+    if (mountedRef.current) setListening(false);
   }, [stopRecording]);
+
+  const startListening = useCallback(async () => {
+    setError("");
+    try {
+      await startRecording({
+        sampleRate: 16000,
+        channels: 1,
+        encoding: "pcm_16bit",
+        interval: 180,
+        bufferDurationSeconds: 0.2,
+        streamFormat: "float32",
+        output: { primary: { enabled: false } },
+        keepFullAnalysis: false,
+        keepAwake: false,
+        showNotification: false,
+        android: { audioFocusStrategy: "interactive" },
+        onAudioStream: async (event) => {
+          if (event.data instanceof Float32Array) {
+            const detected = detectPitch(event.data, 16000);
+            if (detected && mountedRef.current) setFrequency(detected);
+          }
+        },
+      });
+      if (mountedRef.current) setListening(true);
+    } catch {
+      if (mountedRef.current) setError("Microphone access is required to use the tuner.");
+    }
+  }, [startRecording]);
 
   useEffect(() => {
     mountedRef.current = true;
-    void beginListening();
-
+    startListening();
     return () => {
       mountedRef.current = false;
-      if (listeningRef.current) {
-        listeningRef.current = false;
-        void stopRecording();
-        void setAudioModeAsync({ allowsRecording: false });
-      }
+      stopRecording().catch(() => {});
     };
-  }, [beginListening, stopRecording]);
+  }, [startListening, stopRecording]);
 
-  const target = useMemo(
-    () => selectedString || (reading ? nearestGuitarString(reading.frequency) : null),
-    [reading, selectedString],
-  );
-  const cents = reading && target
-    ? centsBetween(reading.frequency, target.frequency)
-    : 0;
-  const clampedCents = Math.max(-50, Math.min(50, cents));
-  const inTune = Boolean(reading && target && Math.abs(cents) <= IN_TUNE_CENTS);
-  const statusText = state === "starting"
-    ? "Starting microphone..."
-    : state === "denied"
-    ? "Microphone access is required"
-    : state === "error"
-      ? "Microphone unavailable"
-      : state === "stopped"
-        ? "Listening paused"
-        : !reading
-          ? "Play a single string"
-          : inTune
-            ? "In tune"
-            : cents < 0
-              ? "Tune up"
-              : "Tune down";
-  const accentColor = inTune ? "#22C55E" : "#3B82F6";
+  const guidance =
+    cents === null
+      ? "Pluck the selected string"
+      : inTune
+        ? "In tune"
+        : cents < 0
+          ? "Tune up"
+          : "Tune down";
 
   return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: "#121212" }}
-      contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
-    >
+    <View style={{ flex: 1, backgroundColor: "#121212", padding: 20 }}>
       <Stack.Screen options={{ title: "Guitar Tuner" }} />
+      <Text style={{ color: "white", fontSize: 30, fontWeight: "bold", marginTop: 50 }}>Guitar Tuner</Text>
+      <Text style={{ color: "#9CA3AF", fontSize: 16, marginTop: 8 }}>Standard tuning: E A D G B E</Text>
 
-      <Text
-        style={{
-          color: "white",
-          fontSize: 30,
-          fontWeight: "bold",
-          marginTop: 30,
-        }}
-      >
-        Guitar Tuner
-      </Text>
-
-      <View
-        style={{
-          marginTop: 24,
-          backgroundColor: "#1F2937",
-          borderRadius: 8,
-          padding: 22,
-          alignItems: "center",
-        }}
-      >
-        <Text style={{ color: "#9CA3AF", fontSize: 15 }}>
-          {selectedString ? `String ${selectedString.stringNumber}` : "Auto"}
-        </Text>
-
-        <Text
-          style={{
-            color: accentColor,
-            fontSize: 76,
-            fontWeight: "bold",
-            marginTop: 6,
-          }}
-        >
-          {target?.note || "-"}
-          <Text style={{ fontSize: 30 }}>{target?.octave || ""}</Text>
-        </Text>
-
-        <Text style={{ color: "white", fontSize: 18, marginTop: 4 }}>
-          {reading ? `${reading.frequency.toFixed(1)} Hz` : "--.- Hz"}
-        </Text>
-
-        <View style={{ width: "100%", marginTop: 28 }}>
-          <View
-            style={{
-              height: 8,
-              backgroundColor: "#374151",
-              borderRadius: 4,
-              position: "relative",
-            }}
-          >
-            <View
-              style={{
-                position: "absolute",
-                left: "50%",
-                top: -7,
-                width: 2,
-                height: 22,
-                backgroundColor: "#9CA3AF",
-              }}
-            />
-            {reading ? (
-              <View
-                style={{
-                  position: "absolute",
-                  left: `${50 + clampedCents}%`,
-                  top: -10,
-                  width: 5,
-                  height: 28,
-                  borderRadius: 3,
-                  backgroundColor: accentColor,
-                  transform: [{ translateX: -2.5 }],
-                }}
-              />
-            ) : null}
-          </View>
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              marginTop: 10,
-            }}
-          >
-            <Text style={{ color: "#9CA3AF" }}>-50</Text>
-            <Text style={{ color: "#9CA3AF" }}>0 cents</Text>
-            <Text style={{ color: "#9CA3AF" }}>+50</Text>
-          </View>
-        </View>
-
-        <Text
-          style={{
-            color: inTune ? "#22C55E" : "white",
-            fontSize: 22,
-            fontWeight: "bold",
-            marginTop: 24,
-          }}
-        >
-          {statusText}
-        </Text>
-        {reading && target ? (
-          <Text style={{ color: "#9CA3AF", fontSize: 16, marginTop: 8 }}>
-            {inTune
-              ? `${Math.round(Math.abs(cents))} cents`
-              : `${Math.round(Math.abs(cents))} cents ${cents < 0 ? "flat" : "sharp"}`}
-          </Text>
-        ) : null}
-
-        <View
-          style={{
-            width: "100%",
-            height: 5,
-            backgroundColor: "#374151",
-            borderRadius: 3,
-            marginTop: 24,
-            overflow: "hidden",
-          }}
-        >
-          <View
-            style={{
-              width: `${Math.min(100, (reading?.rms || 0) * 900)}%`,
-              height: "100%",
-              backgroundColor: "#22C55E",
-            }}
-          />
-        </View>
-      </View>
-
-      <Text
-        style={{ color: "white", fontSize: 20, fontWeight: "bold", marginTop: 28 }}
-      >
-        String
-      </Text>
-
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 12 }}>
-        <TouchableOpacity
-          onPress={() => setSelectedString(null)}
-          style={{
-            width: "31%",
-            backgroundColor: selectedString === null ? "#3B82F6" : "#1F2937",
-            paddingVertical: 14,
-            borderRadius: 8,
-          }}
-        >
-          <Text style={{ color: "white", textAlign: "center", fontWeight: "bold" }}>
-            Auto
-          </Text>
-        </TouchableOpacity>
-        {STANDARD_TUNING.map((guitarString) => (
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 28 }}>
+        {STANDARD_GUITAR_STRINGS.map((string) => (
           <TouchableOpacity
-            key={guitarString.stringNumber}
-            onPress={() => setSelectedString(guitarString)}
-            style={{
-              width: "31%",
-              backgroundColor:
-                selectedString?.stringNumber === guitarString.stringNumber
-                  ? "#3B82F6"
-                  : "#1F2937",
-              paddingVertical: 14,
-              borderRadius: 8,
+            key={string.id}
+            onPress={() => {
+              setTargetId(string.id);
+              setFrequency(null);
             }}
+            style={{ width: "30%", flexGrow: 1, backgroundColor: string.id === targetId ? "#3B82F6" : "#1F2937", paddingVertical: 14, borderRadius: 8, alignItems: "center" }}
           >
-            <Text style={{ color: "white", textAlign: "center", fontWeight: "bold" }}>
-              {`${guitarString.stringNumber}  ${guitarString.note}${guitarString.octave}`}
-            </Text>
+            <Text style={{ color: "white", fontSize: 20, fontWeight: "bold" }}>{string.note}</Text>
+            <Text style={{ color: string.id === targetId ? "white" : "#9CA3AF", marginTop: 2 }}>{string.label} string</Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      <TouchableOpacity
-        onPress={() => {
-          if (state === "denied") {
-            void Linking.openSettings();
-          } else if (state === "listening") {
-            void endListening();
-          } else {
-            void beginListening();
-          }
-        }}
-        disabled={state === "starting"}
-        style={{
-          backgroundColor: state === "listening" ? "#374151" : "#22C55E",
-          padding: 16,
-          borderRadius: 8,
-          marginTop: 28,
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 8,
-        }}
-      >
-        {state === "starting" ? (
-          <ActivityIndicator color="white" />
-        ) : (
-          <Ionicons
-            name={
-              state === "denied"
-                ? "settings-outline"
-                : state === "listening"
-                  ? "mic-off"
-                  : "mic"
-            }
-            size={20}
-            color="white"
-          />
-        )}
-        <Text style={{ color: "white", fontSize: 17, fontWeight: "bold" }}>
-          {state === "starting"
-            ? "Starting..."
-            : state === "denied"
-              ? "Open Settings"
-            : state === "listening"
-              ? "Stop Listening"
-              : "Start Listening"}
-        </Text>
+      <View style={{ marginTop: 38, alignItems: "center" }}>
+        <Text style={{ color: inTune ? "#22C55E" : "white", fontSize: 72, fontWeight: "bold" }}>{target.note}</Text>
+        <Text style={{ color: "#9CA3AF", fontSize: 18 }}>{frequency ? `${frequency.toFixed(1)} Hz` : `${target.frequency.toFixed(2)} Hz target`}</Text>
+        <Text style={{ color: inTune ? "#22C55E" : "#F59E0B", fontSize: 24, fontWeight: "bold", marginTop: 14 }}>{guidance}</Text>
+      </View>
+
+      <View style={{ marginTop: 38 }}>
+        <View style={{ height: 12, borderRadius: 6, backgroundColor: "#374151", position: "relative" }}>
+          <View style={{ position: "absolute", left: "49.5%", width: 3, top: -8, bottom: -8, backgroundColor: "#22C55E" }} />
+          <View style={{ position: "absolute", left: `${((clampedCents + 50) / 100) * 96}%`, top: -10, width: 14, height: 32, marginLeft: -7, borderRadius: 7, backgroundColor: inTune ? "#22C55E" : "#F59E0B" }} />
+        </View>
+        <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 14 }}>
+          <Text style={{ color: "#9CA3AF" }}>Flat -50</Text>
+          <Text style={{ color: "#9CA3AF" }}>{cents === null ? "0 cents" : `${cents > 0 ? "+" : ""}${cents.toFixed(1)} cents`}</Text>
+          <Text style={{ color: "#9CA3AF" }}>Sharp +50</Text>
+        </View>
+      </View>
+
+      {!!error && <Text style={{ color: "#EF4444", textAlign: "center", marginTop: 24 }}>{error}</Text>}
+      <TouchableOpacity onPress={listening ? stopListening : startListening} style={{ backgroundColor: listening ? "#374151" : "#3B82F6", padding: 16, borderRadius: 8, marginTop: 32 }}>
+        <Text style={{ color: "white", textAlign: "center", fontWeight: "bold", fontSize: 17 }}>{listening ? "Stop Listening" : "Start Listening"}</Text>
       </TouchableOpacity>
-    </ScrollView>
+      <TouchableOpacity onPress={() => router.back()} style={{ padding: 16, marginTop: 8 }}>
+        <Text style={{ color: "white", textAlign: "center", fontSize: 17 }}>Close</Text>
+      </TouchableOpacity>
+    </View>
   );
 }

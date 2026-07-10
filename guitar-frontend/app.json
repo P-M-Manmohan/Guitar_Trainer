@@ -45,6 +45,14 @@
           "recordAudioAndroid": true
         }
       ],
+      [
+        "react-native-vision-camera",
+        {
+          "cameraPermissionText": "Allow Guitar Trainer to analyze your fretting hand.",
+          "enableMicrophonePermission": false,
+          "enableFrameProcessors": true
+        }
+      ],
       "@siteed/audio-studio",
       [
         "expo-splash-screen",
@@ -57,16 +65,7 @@
             "backgroundColor": "#000000"
           }
         }
-      ],
-      [
-        "expo-build-properties",
-        {
-          "ios": {
-            "deploymentTarget": "16.4"
-          }
-        }
-      ],
-      "expo-asset"
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

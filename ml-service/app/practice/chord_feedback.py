@@ -229,6 +229,99 @@ class ChordPracticeEvaluator:
             timing_warning=timing_warning,
         )
 
+    def recognize(
+        self,
+        predicted_chord: Optional[str],
+        chord_confidence: float,
+        finger_placement: Optional[Dict[str, Dict[str, Any]]],
+        audio_result: AudioChordResult,
+        hand_detected: bool,
+        timing_warning: Optional[str] = None,
+    ) -> PracticeFeedback:
+        visual_chord = normalize_chord_name(predicted_chord or "")
+        variants = EXPECTED_FINGERINGS.get(visual_chord)
+
+        if not hand_detected or not finger_placement:
+            return self._build_feedback(
+                target_chord=visual_chord or "Unknown",
+                status="no_hand_detected",
+                overall_score=0,
+                placement_correct=False,
+                audio_correct=False,
+                predicted_chord=predicted_chord,
+                chord_confidence=chord_confidence,
+                audio_result=audio_result,
+                summary="I cannot see your fretting hand clearly.",
+                instruction="Move your fretting hand and the first five frets into the camera guide.",
+                finger_feedback=[],
+                timing_warning=timing_warning,
+            )
+
+        if not visual_chord or variants is None or chord_confidence < 0.50:
+            return self._build_feedback(
+                target_chord=visual_chord or "Unknown",
+                status="no_chord_detected",
+                overall_score=0,
+                placement_correct=False,
+                audio_correct=False,
+                predicted_chord=predicted_chord,
+                chord_confidence=chord_confidence,
+                audio_result=audio_result,
+                summary="No supported chord shape is stable yet.",
+                instruction="Hold one chord shape steady, then strum once.",
+                finger_feedback=[],
+                timing_warning=timing_warning,
+            )
+
+        finger_feedback, placement_score = self._best_variant_feedback(
+            variants, finger_placement
+        )
+        placement_consistent = placement_score >= 0.65
+        audio_chord = normalize_chord_name(audio_result.predicted_chord or "")
+        audio_agrees = (
+            audio_result.audio_detected
+            and audio_result.confidence >= 0.45
+            and audio_chord == visual_chord
+        )
+
+        if not placement_consistent:
+            status = "no_chord_detected"
+            summary = "The hand shape is not stable enough to identify."
+            instruction = "Keep the chord inside the guide and hold the shape steady."
+        elif not audio_result.audio_detected:
+            status = "need_audio"
+            summary = f"Your hand looks closest to {visual_chord}."
+            instruction = "Strum once near the microphone to confirm the chord."
+        elif audio_agrees:
+            status = "recognized"
+            summary = f"You are playing {visual_chord}."
+            instruction = f"Chord detected: {visual_chord}."
+        else:
+            status = "check_tuning_or_strum"
+            summary = f"Your hand looks like {visual_chord}, but the sound does not match."
+            instruction = (
+                f"Your finger placement looks like {visual_chord}, but the sound seems off. "
+                "Make sure every required string rings clearly and tune the guitar."
+            )
+
+        overall_score = int(
+            round((placement_score * 0.65 + (1.0 if audio_agrees else 0.0) * 0.35) * 100)
+        )
+        return self._build_feedback(
+            target_chord=visual_chord,
+            status=status,
+            overall_score=overall_score,
+            placement_correct=placement_consistent,
+            audio_correct=audio_agrees,
+            predicted_chord=predicted_chord,
+            chord_confidence=chord_confidence,
+            audio_result=audio_result,
+            summary=summary,
+            instruction=instruction,
+            finger_feedback=finger_feedback,
+            timing_warning=timing_warning,
+        )
+
     def with_status(
         self,
         feedback: PracticeFeedback,

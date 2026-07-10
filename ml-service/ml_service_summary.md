@@ -16,7 +16,7 @@ graph TD
 ---
 
 ## 1. Hand Tracking & Coordinate Extraction
-* **Framework**: Google MediaPipe (Version `0.10.14` legacy solutions API).
+* **Framework**: Google MediaPipe Tasks (`0.10.35`) with the official Hand Landmarker model and CPU delegate.
 * **Process**: Captures raw camera/image frames and extracts **21 distinct 3D landmarks** corresponding to key anatomical locations of the hand (wrist, thumb joints, and the four finger joints/tips).
 * **Coordinates**: Returns $x, y, z$ coordinates normalized between $0.0$ and $1.0$ relative to the image boundaries.
 

@@ -40,13 +40,7 @@ class PracticeSessionSmoother:
             self._cleanup(now)
             window = self._windows.setdefault(key, deque(maxlen=self.window_size))
             self._last_seen[key] = now
-            window.append(
-                PracticeSample(
-                    target_chord=target_chord,
-                    status=status,
-                    overall_score=overall_score,
-                )
-            )
+            window.append(PracticeSample(target_chord, status, overall_score))
 
             status_counts = Counter(sample.status for sample in window)
             stable_status, _ = status_counts.most_common(1)[0]
@@ -56,13 +50,11 @@ class PracticeSessionSmoother:
                 if sample.status == stable_status
             ]
             stable_score = int(round(sum(stable_scores) / max(1, len(stable_scores))))
-
             return stable_status, stable_score, len(window)
 
     def _cleanup(self, now: float) -> None:
         if now - self._last_cleanup < 60 and len(self._windows) < self.max_sessions:
             return
-
         expired = [
             key
             for key, last_seen in self._last_seen.items()
@@ -78,5 +70,4 @@ class PracticeSessionSmoother:
             for key in oldest:
                 self._windows.pop(key, None)
                 self._last_seen.pop(key, None)
-
         self._last_cleanup = now

@@ -9,7 +9,7 @@ import {
 } from "react-native";
 
 import { SERVER_ERROR, apiGet } from "../services/api";
-import { ExpectedFingering } from "../services/practiceAnalysis";
+import type { ExpectedFingering } from "../services/practiceAnalysis";
 
 type Chord = {
   id: string;
@@ -83,47 +83,47 @@ const FINGER_NAMES: Record<string, string> = {
   "3": "ring",
   "4": "pinky",
   T: "thumb",
-  t: "thumb",
 };
 
-function fingeringsFromChordResponse(response: any): ExpectedFingering[] {
+function fretNumber(value: string) {
+  if (/\d/.test(value)) {
+    return Number(value);
+  }
+  if (/^[a-z]$/i.test(value)) {
+    return value.toLowerCase().charCodeAt(0) - 87;
+  }
+  return -1;
+}
+
+function expectedFingeringsFromResponse(response: any): ExpectedFingering[] {
   if (!Array.isArray(response?.positions)) {
     return [];
   }
 
-  return response.positions
-    .map((position: ChordPosition) => {
-      const fingering: ExpectedFingering = {};
-      const frets = position.frets || "";
-      const fingers = position.fingers || "";
+  return response.positions.flatMap((position: ChordPosition) => {
+    const frets = position.frets || "";
+    const fingers = position.fingers || "";
+    const expected: ExpectedFingering = {};
 
-      for (let index = 0; index < Math.min(frets.length, fingers.length, 6); index += 1) {
-        const fretCharacter = frets[index].toLowerCase();
-        const fret = /^\d$/.test(fretCharacter)
-          ? Number(fretCharacter)
-          : /^[a-z]$/.test(fretCharacter)
-            ? 10 + fretCharacter.charCodeAt(0) - "a".charCodeAt(0)
-            : 0;
-        const finger = FINGER_NAMES[fingers[index]];
-        if (finger && Number.isInteger(fret) && fret > 0) {
-          fingering[finger] = {
-            string: 6 - index,
-            fret,
-          };
-        }
+    for (let index = 0; index < Math.min(6, frets.length, fingers.length); index += 1) {
+      const finger = FINGER_NAMES[fingers[index]?.toUpperCase()];
+      const fret = fretNumber(frets[index]);
+      if (finger && fret > 0) {
+        // Backend shapes run low E to high E; guitar string numbers run 6 to 1.
+        expected[finger] = { string: 6 - index, fret };
       }
-      return fingering;
-    })
-    .filter((fingering: ExpectedFingering) => Object.keys(fingering).length > 0);
+    }
+
+    return Object.keys(expected).length > 0 ? [expected] : [];
+  });
 }
 
 function targetChordName(root: string, quality: string) {
-  const normalizedQuality = quality.toLowerCase();
-  if (normalizedQuality.includes("diminished")) {
-    return `${root}dim`;
-  }
-  if (normalizedQuality.includes("minor")) {
+  if (quality === "minor") {
     return `${root}m`;
+  }
+  if (quality === "diminished") {
+    return `${root}dim`;
   }
   return root;
 }
@@ -136,9 +136,9 @@ export default function ChordDetailScreen({
   const [diagram, setDiagram] = useState<any>(null);
   const [diagramError, setDiagramError] = useState("");
   const [fingerLines, setFingerLines] = useState<string[]>(chord.fingers || []);
-  const [expectedFingerings, setExpectedFingerings] = useState<ExpectedFingering[]>([]);
   const [fingerError, setFingerError] = useState("");
-  const [fingerLoading, setFingerLoading] = useState(true);
+  const [expectedFingerings, setExpectedFingerings] = useState<ExpectedFingering[]>([]);
+  const [loadingFingering, setLoadingFingering] = useState(true);
 
   useEffect(() => {
     let active = true;
@@ -156,25 +156,22 @@ export default function ChordDetailScreen({
         }
       });
 
-    setFingerLoading(true);
+    setLoadingFingering(true);
     apiGet(`/chords/${encodeURIComponent(root)}/${quality}`)
       .then((response) => {
         if (active) {
           const nextLines = linesFromChordResponse(response);
           setFingerLines(nextLines.length ? nextLines : chord.fingers || []);
-          setExpectedFingerings(fingeringsFromChordResponse(response));
+          setExpectedFingerings(expectedFingeringsFromResponse(response));
           setFingerError("");
+          setLoadingFingering(false);
         }
       })
       .catch(() => {
         if (active) {
           setExpectedFingerings([]);
           setFingerError(SERVER_ERROR);
-        }
-      })
-      .finally(() => {
-        if (active) {
-          setFingerLoading(false);
+          setLoadingFingering(false);
         }
       });
 
@@ -343,7 +340,6 @@ export default function ChordDetailScreen({
       </View>
 
       <TouchableOpacity
-        disabled={fingerLoading || expectedFingerings.length === 0}
         onPress={() =>
           router.push({
             pathname: "/practice-session",
@@ -351,13 +347,14 @@ export default function ChordDetailScreen({
               source: `${chord.name} Practice`,
               targetChord: targetChordName(root, quality),
               expectedFingerings: JSON.stringify(expectedFingerings),
-              fallbackInstruction: fingerLines.join(" "),
+              fingerInstruction: fingerLines.join(" "),
             },
           })
         }
+        disabled={loadingFingering || expectedFingerings.length === 0}
         style={{
           backgroundColor:
-            fingerLoading || expectedFingerings.length === 0
+            loadingFingering || expectedFingerings.length === 0
               ? "#4B5563"
               : "#3B82F6",
           padding: 18,
@@ -373,7 +370,7 @@ export default function ChordDetailScreen({
             fontWeight: "bold",
           }}
         >
-          {fingerLoading ? "Loading Chord..." : "Practice Chord"}
+          {loadingFingering ? "Loading Chord..." : "Practice Chord"}
         </Text>
       </TouchableOpacity>
     </ScrollView>
