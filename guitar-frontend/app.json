@@ -18,8 +18,8 @@
     },
     "android": {
       "permissions": [
-        "CAMERA",
-        "RECORD_AUDIO"
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
       ],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
@@ -29,16 +29,6 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "permissions": [
-        "CAMERA",
-        "RECORD_AUDIO",
-        "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO",
-        "CAMERA",
-        "RECORD_AUDIO",
-        "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO"
-      ],
       "package": "com.anonymous.guitarcoachsdk54"
     },
     "web": {
@@ -47,7 +37,6 @@
     },
     "plugins": [
       "expo-router",
-      "expo-camera",
       [
         "expo-camera",
         {
@@ -56,6 +45,7 @@
           "recordAudioAndroid": true
         }
       ],
+      "@siteed/audio-studio",
       [
         "expo-splash-screen",
         {
@@ -67,7 +57,16 @@
             "backgroundColor": "#000000"
           }
         }
-      ]
+      ],
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "16.4"
+          }
+        }
+      ],
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true,

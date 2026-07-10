@@ -26,6 +26,7 @@ pub struct AppState {
     pub redis: RedisPool,
     pub config: Arc<AppConfig>,
     pub s3: Arc<dyn Storage>,
+    pub ai_client: reqwest::Client,
 }
 
 // ── main ─────────────────────────────────────────────────────────────────────
@@ -59,7 +60,16 @@ async fn main() -> anyhow::Result<()> {
     sqlx::migrate!("./migrations").run(&db).await?;
     tracing::info!("migrations applied");
 
-    let state = AppState { db, redis, config: config.clone(), s3 };
+    let ai_client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(10))
+        .build()?;
+    let state = AppState {
+        db,
+        redis,
+        config: config.clone(),
+        s3,
+        ai_client,
+    };
 
     // ── Router ────────────────────────────────────────────────────────────────
     //
@@ -68,6 +78,7 @@ async fn main() -> anyhow::Result<()> {
     .merge(routes::auth::auth_router())
     .merge(routes::profile::profile_router())
     .merge(routes::lessons::lessons_router())
+    .merge(routes::ml::ml_router())
     .layer(axum_middleware::from_fn_with_state(
         state.clone(),
         mw::auth::optional_auth,

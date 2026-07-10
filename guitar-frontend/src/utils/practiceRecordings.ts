@@ -4,6 +4,7 @@ export type PracticeRecording = {
   id: string;
   name: string;
   uri: string;
+  audioUri?: string;
   createdAt: string;
   durationSeconds: number;
   durationMs?: number;
@@ -39,6 +40,7 @@ export async function getPracticeRecordings(): Promise<PracticeRecording[]> {
 
 export async function savePracticeRecording(input: {
   tempUri: string;
+  tempAudioUri?: string;
   name: string;
   durationSeconds: number;
   source?: string;
@@ -46,16 +48,27 @@ export async function savePracticeRecording(input: {
   await ensureDirectory();
 
   const id = `${Date.now()}`;
-  const destinationUri = `${RECORDINGS_DIR}${id}.mov`;
+  const videoExtension = input.tempUri.split("?")[0].match(/\.[a-z0-9]+$/i)?.[0] || ".mp4";
+  const destinationUri = `${RECORDINGS_DIR}${id}${videoExtension}`;
   await FileSystem.copyAsync({
     from: input.tempUri,
     to: destinationUri,
   });
 
+  let audioUri: string | undefined;
+  if (input.tempAudioUri) {
+    audioUri = `${RECORDINGS_DIR}${id}.wav`;
+    await FileSystem.copyAsync({
+      from: input.tempAudioUri,
+      to: audioUri,
+    });
+  }
+
   const recording: PracticeRecording = {
     id,
     name: input.name.trim() || "Practice Session",
     uri: destinationUri,
+    audioUri,
     createdAt: new Date().toISOString(),
     durationSeconds: input.durationSeconds,
     source: input.source,
@@ -74,6 +87,12 @@ export async function deletePracticeRecording(id: string) {
     const info = await FileSystem.getInfoAsync(recording.uri);
     if (info.exists) {
       await FileSystem.deleteAsync(recording.uri, { idempotent: true });
+    }
+    if (recording.audioUri) {
+      const audioInfo = await FileSystem.getInfoAsync(recording.audioUri);
+      if (audioInfo.exists) {
+        await FileSystem.deleteAsync(recording.audioUri, { idempotent: true });
+      }
     }
   }
 

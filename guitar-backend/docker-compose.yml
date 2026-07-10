@@ -24,6 +24,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      ml-service:
+        condition: service_healthy
     environment:
       POSTGRESQL_HOST: postgres
       POSTGRESQL_PORT: 5432
@@ -68,13 +70,25 @@ services:
       S3_ENDPOINT: ""
       AWS_ACCESS_KEY_ID: ""
       AWS_SECRET_ACCESS_KEY: ""
-      AI_SERVICE_URL: http://localhost:9000
+      AI_SERVICE_URL: http://ml-service:8000
       AI_SERVICE_KEY: ""
       RATE_LIMIT_RPS: 60
     ports:
       - "8080:8080"
     volumes:
       - ./:/app
+
+  ml-service:
+    build:
+      context: ../ml-service
+      dockerfile: Dockerfile
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "8000:8000"
 
 volumes:
   pg_data:

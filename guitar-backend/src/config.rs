@@ -43,6 +43,8 @@ impl AppConfig {
             .set_default("jwt_expiry_secs", 86400)?
             .set_default("refresh_token_expiry_secs", 2_592_000)? // 30 days
             .set_default("rate_limit_rps", 60)?
+            .set_default("ai_service_url", "http://127.0.0.1:8000")?
+            .set_default("ai_service_key", "")?
             .build()?;
 
         Ok(cfg.try_deserialize()?)

@@ -140,9 +140,10 @@ class ChordPracticeEvaluator:
         audio_result: AudioChordResult,
         hand_detected: bool,
         timing_warning: Optional[str] = None,
+        expected_fingerings: Optional[List[Fingering]] = None,
     ) -> PracticeFeedback:
         normalized_target = normalize_chord_name(target_chord)
-        variants = EXPECTED_FINGERINGS.get(normalized_target)
+        variants = expected_fingerings or EXPECTED_FINGERINGS.get(normalized_target)
         if variants is None:
             supported = ", ".join(sorted(EXPECTED_FINGERINGS.keys()))
             return self._build_feedback(
@@ -177,9 +178,9 @@ class ChordPracticeEvaluator:
             )
 
         finger_feedback, placement_score = self._best_variant_feedback(variants, finger_placement)
-        normalized_prediction = normalize_chord_name(predicted_chord or "")
-        classifier_agrees = normalized_prediction == normalized_target and chord_confidence >= 0.50
-        placement_correct = placement_score >= 0.72 or classifier_agrees
+        placement_correct = bool(finger_feedback) and all(
+            item.correct for item in finger_feedback
+        )
         audio_correct = audio_result.matches_target
 
         if timing_warning and audio_result.audio_detected:
@@ -194,11 +195,15 @@ class ChordPracticeEvaluator:
         elif not placement_correct:
             status = "fix_fingering"
             summary = f"Your {normalized_target} shape needs adjustment."
-            instruction = self._first_finger_instruction(finger_feedback)
+            instruction = self._finger_placement_instruction(finger_feedback)
         elif audio_result.audio_detected:
             status = "check_tuning_or_strum"
             summary = "Your finger placement looks close, but the sound does not match."
-            instruction = "Tune the guitar and make sure every required string rings clearly."
+            instruction = (
+                "Your finger placements are correct, but the sound it produces seems off. "
+                "Make sure not to mute any other strings accidentally, or it seems your guitar "
+                "is not properly tuned."
+            )
         else:
             status = "need_audio"
             summary = "Your finger placement looks close, but I need a clear strum to confirm the chord."
@@ -338,8 +343,11 @@ class ChordPracticeEvaluator:
             return 0.4
         return 0.0
 
-    def _first_finger_instruction(self, finger_feedback: List[FingerFeedback]) -> str:
-        for item in finger_feedback:
-            if not item.correct:
-                return item.message
-        return "Check that each finger is pressing the expected string and fret."
+    def _finger_placement_instruction(self, finger_feedback: List[FingerFeedback]) -> str:
+        if not finger_feedback:
+            return "Check that each finger is pressing the expected string and fret."
+        placements = [
+            f"{item.finger.capitalize()}: string {item.expected_string}, fret {item.expected_fret}."
+            for item in finger_feedback
+        ]
+        return "Place your fingers as follows: " + " ".join(placements)

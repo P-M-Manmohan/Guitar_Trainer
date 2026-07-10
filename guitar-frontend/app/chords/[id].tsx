@@ -4,26 +4,26 @@ import ChordDetailScreen from "../../src/screens/ChordDetailScreen";
 
 export default function ChordDetailPage() {
   const { id, root, quality, name } = useLocalSearchParams();
+  const chordId = String(id || root || "C");
 
-  const chord = chords.find(
-    (c) => c.id === id
-  );
+  const localChord = chords.find((chord) => String(chord.id) === chordId);
 
-  const fallbackChord =
-    chord || {
-      id: String(id || root || "C"),
-      name: String(name || id || "Chord"),
-      category: String(quality || "major"),
-      difficulty: "",
-      description: "Practice this chord shape.",
-      fingers: [],
-    };
+  const detailChord = {
+    id: chordId,
+    name: String(name || localChord?.name || id || "Chord"),
+    category: String(quality || localChord?.type || "major"),
+    difficulty: "",
+    description: "Practice this chord shape.",
+    fingers: [],
+  };
 
   return (
     <ChordDetailScreen
-      chord={fallbackChord}
-      root={String(root || fallbackChord.id.replace("m", ""))}
-      quality={String(quality || (fallbackChord.id.includes("m") ? "minor" : "major"))}
+      chord={detailChord}
+      root={String(root || localChord?.scale || chordId.replace("m", ""))}
+      quality={String(
+        quality || localChord?.type.toLowerCase() || (chordId.includes("m") ? "minor" : "major"),
+      )}
     />
   );
 }

@@ -9,6 +9,7 @@ import {
 } from "react-native";
 
 import { SERVER_ERROR, apiGet } from "../services/api";
+import { ExpectedFingering } from "../services/practiceAnalysis";
 
 type Chord = {
   id: string;
@@ -76,6 +77,57 @@ function diagramSource(response: any) {
   return null;
 }
 
+const FINGER_NAMES: Record<string, string> = {
+  "1": "index",
+  "2": "middle",
+  "3": "ring",
+  "4": "pinky",
+  T: "thumb",
+  t: "thumb",
+};
+
+function fingeringsFromChordResponse(response: any): ExpectedFingering[] {
+  if (!Array.isArray(response?.positions)) {
+    return [];
+  }
+
+  return response.positions
+    .map((position: ChordPosition) => {
+      const fingering: ExpectedFingering = {};
+      const frets = position.frets || "";
+      const fingers = position.fingers || "";
+
+      for (let index = 0; index < Math.min(frets.length, fingers.length, 6); index += 1) {
+        const fretCharacter = frets[index].toLowerCase();
+        const fret = /^\d$/.test(fretCharacter)
+          ? Number(fretCharacter)
+          : /^[a-z]$/.test(fretCharacter)
+            ? 10 + fretCharacter.charCodeAt(0) - "a".charCodeAt(0)
+            : 0;
+        const finger = FINGER_NAMES[fingers[index]];
+        if (finger && Number.isInteger(fret) && fret > 0) {
+          fingering[finger] = {
+            string: 6 - index,
+            fret,
+          };
+        }
+      }
+      return fingering;
+    })
+    .filter((fingering: ExpectedFingering) => Object.keys(fingering).length > 0);
+}
+
+function targetChordName(root: string, quality: string) {
+  const normalizedQuality = quality.toLowerCase();
+  if (normalizedQuality.includes("diminished")) {
+    return `${root}dim`;
+  }
+  if (normalizedQuality.includes("minor")) {
+    return `${root}m`;
+  }
+  return root;
+}
+
 export default function ChordDetailScreen({
   chord,
   root,
@@ -84,7 +136,9 @@ export default function ChordDetailScreen({
   const [diagram, setDiagram] = useState<any>(null);
   const [diagramError, setDiagramError] = useState("");
   const [fingerLines, setFingerLines] = useState<string[]>(chord.fingers || []);
+  const [expectedFingerings, setExpectedFingerings] = useState<ExpectedFingering[]>([]);
   const [fingerError, setFingerError] = useState("");
+  const [fingerLoading, setFingerLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
@@ -102,26 +156,25 @@ export default function ChordDetailScreen({
         }
       });
 
-    apiGet(`/chord/${encodeURIComponent(root)}/${quality}`)
+    setFingerLoading(true);
+    apiGet(`/chords/${encodeURIComponent(root)}/${quality}`)
       .then((response) => {
         if (active) {
           const nextLines = linesFromChordResponse(response);
           setFingerLines(nextLines.length ? nextLines : chord.fingers || []);
+          setExpectedFingerings(fingeringsFromChordResponse(response));
           setFingerError("");
         }
       })
-      .catch(async () => {
-        try {
-          const fallback = await apiGet(`/chords/${encodeURIComponent(root)}/${quality}`);
-          if (active) {
-            const nextLines = linesFromChordResponse(fallback);
-            setFingerLines(nextLines.length ? nextLines : chord.fingers || []);
-            setFingerError("");
-          }
-        } catch {
-          if (active) {
-            setFingerError(SERVER_ERROR);
-          }
+      .catch(() => {
+        if (active) {
+          setExpectedFingerings([]);
+          setFingerError(SERVER_ERROR);
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setFingerLoading(false);
         }
       });
 
@@ -290,14 +343,23 @@ export default function ChordDetailScreen({
       </View>
 
       <TouchableOpacity
+        disabled={fingerLoading || expectedFingerings.length === 0}
         onPress={() =>
           router.push({
             pathname: "/practice-session",
-            params: { source: `${chord.name} Practice` },
+            params: {
+              source: `${chord.name} Practice`,
+              targetChord: targetChordName(root, quality),
+              expectedFingerings: JSON.stringify(expectedFingerings),
+              fallbackInstruction: fingerLines.join(" "),
+            },
           })
         }
         style={{
-          backgroundColor: "#3B82F6",
+          backgroundColor:
+            fingerLoading || expectedFingerings.length === 0
+              ? "#4B5563"
+              : "#3B82F6",
           padding: 18,
           borderRadius: 15,
           marginTop: 30,
@@ -311,7 +373,7 @@ export default function ChordDetailScreen({
             fontWeight: "bold",
           }}
         >
-          Practice Chord
+          {fingerLoading ? "Loading Chord..." : "Practice Chord"}
         </Text>
       </TouchableOpacity>
     </ScrollView>
