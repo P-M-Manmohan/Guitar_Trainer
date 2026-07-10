@@ -1,6 +1,7 @@
 use crate::{
     models::users::{SignupRequest, LoginRequest},
     AppState,
+    services::jwt,
     errors::AppError,
     repositories::auth,
     services::jwt::generate,
@@ -16,6 +17,67 @@ use argon2::password_hash::{
     SaltString,
     rand_core::OsRng,
 };
+
+use axum::{
+    async_trait,
+    extract::FromRequestParts,
+    http::{
+        header,
+        request::Parts,
+    },
+};
+
+
+pub struct AuthUser {
+    pub id: i64,
+}
+
+#[async_trait]
+impl<S> FromRequestParts<S> for AuthUser
+where
+    S: Send + Sync,
+{
+    type Rejection = AppError;
+
+    async fn from_request_parts(
+        parts: &mut Parts,
+        _: &S,
+    ) -> Result<Self, Self::Rejection> {
+
+        let auth =
+            parts
+                .headers
+                .get(header::AUTHORIZATION)
+                .ok_or(
+                    AppError::Unauthorized(
+                        "Missing authorization header".into(),
+                    )
+                )?
+                .to_str()
+                .map_err(|_| {
+                    AppError::Unauthorized(
+                        "Invalid authorization header".into(),
+                    )
+                })?;
+
+        let token =
+            auth
+                .strip_prefix("Bearer ")
+                .ok_or(
+                    AppError::Unauthorized(
+                        "Invalid bearer token".into(),
+                    )
+                )?;
+
+        let claims = jwt::verify(token)?;
+
+        Ok(
+            AuthUser {
+                id: claims.sub,
+            }
+        )
+    }
+}
 
 
 pub async fn signup(

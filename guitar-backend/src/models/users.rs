@@ -27,3 +27,20 @@ pub struct User {
 pub struct AuthResponse {
     pub token: String,
 }
+
+#[derive(Serialize)]
+pub struct UserProfile {
+    pub username: String,
+    pub practice_time: i64,
+    pub lessons_completed: i32,
+}
+
+#[derive(Deserialize)]
+pub struct PracticeTimeRequest {
+    pub seconds: i64,
+}
+
+#[derive(Deserialize)]
+pub struct LessonCompletionRequest {
+    pub complete: i32,
+}

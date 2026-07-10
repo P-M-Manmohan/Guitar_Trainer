@@ -35,5 +35,6 @@ env/
 .DS_Store
 
 
-seed.py
+seed*
+lessons.json
 error.txt
