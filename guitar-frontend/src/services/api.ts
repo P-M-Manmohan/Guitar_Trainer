@@ -1,4 +1,5 @@
 import Constants from "expo-constants";
+import { getAuthToken } from "./auth";
 
 const configuredBaseUrl =
   process.env.EXPO_PUBLIC_API_BASE_URL ||
@@ -12,24 +13,31 @@ export const API_BASE_URL =
 
 export const SERVER_ERROR = "Server Error!";
 
+async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const token = await getAuthToken();
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    ...init,
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...init.headers,
+    },
+  });
+  if (!response.ok) throw new Error(SERVER_ERROR);
+
+  const body = await response.text();
+  return (body ? JSON.parse(body) : undefined) as T;
+}
+
 export async function apiGet<T>(path: string): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`);
-  if (!response.ok) {
-    throw new Error(SERVER_ERROR);
-  }
-  return response.json();
+  return request<T>(path);
 }
 
 export async function apiPost<T>(path: string, body: unknown): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  return request<T>(path, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  if (!response.ok) {
-    throw new Error(SERVER_ERROR);
-  }
-  return response.json();
 }
 
 export function qualityToPath(quality: "Maj" | "Min") {

@@ -15,16 +15,30 @@ export default function HomeScreen() {
   const [metronomeVisible, setMetronomeVisible] = useState(false);
   const [todayPractice, setTodayPractice] = useState("00:00:00");
 
+  const refreshTodayPractice = useCallback(() => {
+    getPracticeRecordings().then((items) => {
+      const today = new Date().toDateString();
+      const totalSeconds = items.filter((item) => new Date(item.createdAt).toDateString() === today).reduce((sum, item) => sum + getDurationSeconds(item), 0);
+      setTodayPractice(formatDuration(totalSeconds));
+    });
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
-      getPracticeRecordings().then((items) => {
-        const today = new Date().toDateString();
-        const totalSeconds = items
-          .filter((item) => new Date(item.createdAt).toDateString() === today)
-          .reduce((sum, item) => sum + getDurationSeconds(item), 0);
-        setTodayPractice(formatDuration(totalSeconds));
-      });
-    }, [])
+      refreshTodayPractice();
+      const now = new Date();
+      const nextMidnight = new Date(now);
+      nextMidnight.setHours(24, 0, 0, 0);
+      let dailyRefresh: ReturnType<typeof setInterval> | undefined;
+      const timeout = setTimeout(() => {
+        refreshTodayPractice();
+        dailyRefresh = setInterval(refreshTodayPractice, 24 * 60 * 60 * 1000);
+      }, nextMidnight.getTime() - now.getTime() + 1000);
+      return () => {
+        clearTimeout(timeout);
+        if (dailyRefresh) clearInterval(dailyRefresh);
+      };
+    }, [refreshTodayPractice])
   );
 
   return (

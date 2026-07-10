@@ -7,26 +7,13 @@ import { SERVER_ERROR, apiGet } from "../services/api";
 type Lesson = {
   id: number;
   title: string;
-  description: string;
+  description?: string;
   duration?: string;
   duration_mins?: number;
   level?: string;
   difficulty?: number | string;
   completed?: boolean;
 };
-
-function lessonLevel(lesson: Lesson) {
-  if (lesson.level) {
-    return lesson.level;
-  }
-  if (lesson.difficulty === 1 || lesson.difficulty === "Beginner") {
-    return "Beginner";
-  }
-  if (lesson.difficulty === 2 || lesson.difficulty === "Intermediate") {
-    return "Intermediate";
-  }
-  return "Advanced";
-}
 
 function LessonCard({
   lesson,
@@ -41,8 +28,6 @@ function LessonCard({
           params: {
             id: String(lesson.id),
             title: lesson.title,
-            description: lesson.description,
-            duration: lesson.duration || `${lesson.duration_mins || 0} min`,
           },
         })
       }
@@ -64,23 +49,6 @@ function LessonCard({
         {lesson.title}
       </Text>
 
-      <Text
-        style={{
-          color: "#BBBBBB",
-          marginTop: 6,
-        }}
-      >
-        {lesson.description}
-      </Text>
-
-      <Text
-        style={{
-          color: "#3B82F6",
-          marginTop: 8,
-        }}
-      >
-        {lesson.duration || `${lesson.duration_mins || 0} min`}
-      </Text>
     </TouchableOpacity>
   );
 }
@@ -92,17 +60,16 @@ export default function LessonScreen() {
   useEffect(() => {
     apiGet<Lesson[]>("/lessons")
       .then((response) => {
-        setLessons(Array.isArray(response) ? response : []);
+        // The summary API is the single source for this screen. De-duplicate
+        // defensively so a repeated row can never create a repeated card.
+        const uniqueLessons = Array.isArray(response)
+          ? [...new Map(response.map((lesson) => [lesson.id, lesson])).values()]
+          : [];
+        setLessons(uniqueLessons);
         setError("");
       })
       .catch(() => setError(SERVER_ERROR));
   }, []);
-
-  const grouped = {
-    Beginner: lessons.filter((lesson) => lessonLevel(lesson) === "Beginner"),
-    Intermediate: lessons.filter((lesson) => lessonLevel(lesson) === "Intermediate"),
-    Advanced: lessons.filter((lesson) => lessonLevel(lesson) === "Advanced"),
-  };
 
   return (
     <ScrollView
@@ -132,25 +99,7 @@ export default function LessonScreen() {
         </Text>
       )}
 
-      {(["Beginner", "Intermediate", "Advanced"] as const).map((level) => (
-        <ScrollView key={level} scrollEnabled={false}>
-          <Text
-            style={{
-              color: "white",
-              fontSize: 22,
-              fontWeight: "bold",
-              marginTop: 30,
-            }}
-          >
-            {level}
-          </Text>
-
-          {!error &&
-            grouped[level].map((lesson) => (
-              <LessonCard key={lesson.id} lesson={lesson} />
-            ))}
-        </ScrollView>
-      ))}
+      {!error && lessons.map((lesson) => <LessonCard key={lesson.id} lesson={lesson} />)}
     </ScrollView>
   );
 }

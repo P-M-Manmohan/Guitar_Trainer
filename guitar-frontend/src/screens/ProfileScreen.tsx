@@ -1,15 +1,13 @@
 import { router, useFocusEffect } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 import { SERVER_ERROR, apiGet } from "../services/api";
-import {
-  formatDuration,
-  getDurationSeconds,
-  getPracticeRecordings,
-} from "../utils/practiceRecordings";
+import { formatDuration } from "../utils/practiceRecordings";
 
 type UserProfile = {
+  username?: string;
+  practice_time?: number;
   lessons_completed?: number;
   completedLessons?: number;
 };
@@ -51,10 +49,8 @@ function StatCard({
 export default function ProfileScreen() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [error, setError] = useState("");
-  const [practiceTime, setPracticeTime] = useState("00:00:00");
-
-  useEffect(() => {
-    apiGet<UserProfile>("/user/1")
+  const loadProfile = useCallback(() => {
+    apiGet<UserProfile>("/user/profile")
       .then((response) => {
         setProfile(response);
         setError("");
@@ -64,14 +60,8 @@ export default function ProfileScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      getPracticeRecordings().then((items) => {
-        const totalSeconds = items.reduce(
-          (sum, item) => sum + getDurationSeconds(item),
-          0
-        );
-        setPracticeTime(formatDuration(totalSeconds));
-      });
-    }, [])
+      loadProfile();
+    }, [loadProfile])
   );
 
   const completed =
@@ -97,14 +87,14 @@ export default function ProfileScreen() {
           marginTop: 60,
         }}
       >
-        My Profile
+        {profile?.username ? `${profile.username}'s Profile` : "My Profile"}
       </Text>
 
       <StatCard
         label="Lessons Completed"
         value={error ? SERVER_ERROR : completed}
       />
-      <StatCard label="Practice Time" value={practiceTime} />
+      <StatCard label="Practice Time" value={error ? SERVER_ERROR : formatDuration(profile?.practice_time || 0)} />
 
       <TouchableOpacity
         onPress={() => router.push("/practice-history")}

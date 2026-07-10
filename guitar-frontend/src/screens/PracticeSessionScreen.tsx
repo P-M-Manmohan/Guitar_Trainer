@@ -29,6 +29,7 @@ import {
   type PracticeAnalysisResponse,
 } from "../services/practiceAnalysis";
 import { savePracticeRecording } from "../utils/practiceRecordings";
+import { apiPost } from "../services/api";
 
 const ML_WIDTH = 216;
 const ML_HEIGHT = 384;
@@ -336,13 +337,17 @@ export default function PracticeSessionScreen() {
   const saveRecording = async () => {
     if (!tempUri) return;
     try {
+      const durationSeconds = Math.max(1, Math.round(durationMs / 1000));
       await savePracticeRecording({
         tempUri,
         tempAudioUri: tempAudioUri || undefined,
         name: recordingName,
-        durationSeconds: Math.max(1, Math.round(durationMs / 1000)),
+        durationSeconds,
         source,
       });
+      // A saved local recording is the source of truth; a temporary API failure
+      // must not discard it.
+      await apiPost<void>("/practice/time", { seconds: durationSeconds }).catch(() => {});
       setSaveVisible(false);
       router.replace("/profile");
     } catch {
