@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "scripts": {
     "start": "expo start",
+    "postinstall": "node ./scripts/patch-vision-camera-worklets.js",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo run:android",
     "ios": "expo run:ios",
@@ -51,7 +52,6 @@
     "react-native-vector-icons": "^10.3.0",
     "react-native-vision-camera": "^5.1.0",
     "react-native-vision-camera-resizer": "^5.1.0",
-    "react-native-vision-camera-worklets": "^5.1.0",
     "react-native-web": "~0.21.0",
     "react-native-worklets": "0.5.1",
     "zustand": "^5.0.14"

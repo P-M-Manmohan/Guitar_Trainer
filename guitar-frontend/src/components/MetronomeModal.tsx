@@ -1,5 +1,5 @@
 import { setAudioModeAsync, useAudioPlayer } from "expo-audio";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Modal,
   Pressable,
@@ -8,8 +8,7 @@ import {
   View,
 } from "react-native";
 
-const BEEP_URI =
-  "data:audio/wav;base64,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";
+const CLICK_ASSET = require("../../assets/audio/metronome-click.wav");
 
 type Props = {
   visible: boolean;
@@ -29,21 +28,42 @@ export default function MetronomeModal({
   const [bpm, setBpm] = useState(90);
   const [internalPlaying, setInternalPlaying] = useState(false);
   const [sliderWidth, setSliderWidth] = useState(1);
-  const player = useAudioPlayer({ uri: BEEP_URI });
+  const firstPlayer = useAudioPlayer(CLICK_ASSET, {
+    downloadFirst: true,
+    keepAudioSessionActive: true,
+  });
+  const secondPlayer = useAudioPlayer(CLICK_ASSET, {
+    downloadFirst: true,
+    keepAudioSessionActive: true,
+  });
+  const thirdPlayer = useAudioPlayer(CLICK_ASSET, {
+    downloadFirst: true,
+    keepAudioSessionActive: true,
+  });
+  const nextPlayerRef = useRef(0);
   const active = playing ?? internalPlaying;
 
-  const setActive = (next: boolean) => {
-    if (onPlayingChange) {
-      onPlayingChange(next);
-    } else {
-      setInternalPlaying(next);
-    }
-  };
+  const setActive = useCallback(
+    (next: boolean) => {
+      if (onPlayingChange) {
+        onPlayingChange(next);
+      } else {
+        setInternalPlaying(next);
+      }
+    },
+    [onPlayingChange],
+  );
 
   const playBeep = useCallback(() => {
-    player.seekTo(0).catch(() => {});
-    player.play();
-  }, [player]);
+    const players = [firstPlayer, secondPlayer, thirdPlayer];
+    const player = players[nextPlayerRef.current % players.length];
+    nextPlayerRef.current += 1;
+    player.volume = 1;
+    void player
+      .seekTo(0)
+      .then(() => player.play())
+      .catch(() => {});
+  }, [firstPlayer, secondPlayer, thirdPlayer]);
 
   const updateBpmFromSlider = (locationX: number) => {
     const ratio = Math.max(0, Math.min(1, locationX / sliderWidth));
@@ -60,9 +80,11 @@ export default function MetronomeModal({
   useEffect(() => {
     setAudioModeAsync({
       playsInSilentMode: true,
+      allowsRecording: keepPlayingOnClose,
       shouldPlayInBackground: false,
+      shouldRouteThroughEarpiece: false,
     }).catch(() => {});
-  }, []);
+  }, [keepPlayingOnClose]);
 
   useEffect(() => {
     if (!active) {
@@ -94,17 +116,11 @@ export default function MetronomeModal({
         <View
           style={{
             backgroundColor: "#1F2937",
-            borderRadius: 15,
+            borderRadius: 8,
             padding: 20,
           }}
         >
-          <Text
-            style={{
-              color: "white",
-              fontSize: 24,
-              fontWeight: "bold",
-            }}
-          >
+          <Text style={{ color: "white", fontSize: 24, fontWeight: "bold" }}>
             Metronome
           </Text>
 
@@ -124,10 +140,7 @@ export default function MetronomeModal({
             <Pressable
               onLayout={(event) => setSliderWidth(event.nativeEvent.layout.width)}
               onPress={(event) => updateBpmFromSlider(event.nativeEvent.locationX)}
-              style={{
-                height: 34,
-                justifyContent: "center",
-              }}
+              style={{ height: 34, justifyContent: "center" }}
             >
               <View
                 style={{
@@ -159,13 +172,11 @@ export default function MetronomeModal({
                 style={{
                   backgroundColor: "#374151",
                   padding: 16,
-                  borderRadius: 10,
+                  borderRadius: 8,
                   minWidth: 80,
                 }}
               >
-                <Text style={{ color: "white", textAlign: "center" }}>
-                  -1
-                </Text>
+                <Text style={{ color: "white", textAlign: "center" }}>-1</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -173,13 +184,11 @@ export default function MetronomeModal({
                 style={{
                   backgroundColor: "#374151",
                   padding: 16,
-                  borderRadius: 10,
+                  borderRadius: 8,
                   minWidth: 80,
                 }}
               >
-                <Text style={{ color: "white", textAlign: "center" }}>
-                  +1
-                </Text>
+                <Text style={{ color: "white", textAlign: "center" }}>+1</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -189,7 +198,7 @@ export default function MetronomeModal({
             style={{
               backgroundColor: active ? "#EF4444" : "#22C55E",
               padding: 16,
-              borderRadius: 12,
+              borderRadius: 8,
               marginTop: 24,
             }}
           >
@@ -210,17 +219,11 @@ export default function MetronomeModal({
             style={{
               backgroundColor: "#111827",
               padding: 14,
-              borderRadius: 12,
+              borderRadius: 8,
               marginTop: 12,
             }}
           >
-            <Text
-              style={{
-                color: "white",
-                textAlign: "center",
-                fontSize: 16,
-              }}
-            >
+            <Text style={{ color: "white", textAlign: "center", fontSize: 16 }}>
               Close
             </Text>
           </TouchableOpacity>

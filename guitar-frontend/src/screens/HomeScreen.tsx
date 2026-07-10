@@ -161,7 +161,7 @@ export default function HomeScreen() {
 
       <HomeButton
         title="Tuner"
-        onPress={() => {}}
+        onPress={() => router.push("/tuner")}
       />
 
       <MetronomeModal

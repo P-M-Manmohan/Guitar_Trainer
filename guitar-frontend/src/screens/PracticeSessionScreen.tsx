@@ -396,6 +396,14 @@ export default function PracticeSessionScreen() {
         keepAwake: false,
         showNotification: false,
         output: { primary: { enabled: true, format: "wav" } },
+        android: { audioFocusStrategy: "background" },
+        ios: {
+          audioSession: {
+            category: "PlayAndRecord",
+            mode: "VideoRecording",
+            categoryOptions: ["DefaultToSpeaker", "MixWithOthers"],
+          },
+        },
         onAudioStream: async (event: AudioDataEvent) => {
           if (typeof event.data === "string") {
             latestAudioRef.current = event.data;
