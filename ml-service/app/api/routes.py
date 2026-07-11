@@ -19,6 +19,7 @@ from app.practice.session_smoothing import PracticeSessionSmoother
 from app.vision.fingering_classifier import ChordClassifier
 from app.vision.fretboard_detection import FretboardDetector
 from app.vision.hand_tracking import HandTracker
+from app.vision.home_chord_detector import HomeChordDetector
 
 router = APIRouter()
 
@@ -29,6 +30,7 @@ TIMESTAMP_TOLERANCE_MS = 350
 tracker = None
 live_tracker = None
 classifier = ChordClassifier()
+home_chord_detector = HomeChordDetector()
 fret_detector = FretboardDetector()
 practice_evaluator = ChordPracticeEvaluator()
 practice_smoother = PracticeSessionSmoother(window_size=5)
@@ -161,7 +163,15 @@ def analyze_practice(payload: PracticeAnalysisRequest):
         confidence = 0.0
         placement = None
         if landmarks:
-            chord_name, confidence = classifier.predict(landmarks)
+            if payload.mode == "free":
+                chord_name, confidence = home_chord_detector.predict(
+                    landmarks,
+                    payload.session_id or "anonymous-free-practice",
+                )
+                if home_chord_detector.available and chord_name is None and confidence >= 0.80:
+                    chord_name = "Adjusting"
+                elif not home_chord_detector.available:
+                    chord_name, confidence = classifier.predict(landmarks)
             placement = fret_detector.analyze_hand_placement(
                 landmarks, _neck_bbox_to_dict(payload.neck_bbox), frame
             )

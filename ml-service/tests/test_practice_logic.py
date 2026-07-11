@@ -63,6 +63,8 @@ class ChordAudioAnalyzerTests(unittest.TestCase):
         self.assertEqual(normalize_chord_name("Bb Minor"), "A#m")
         self.assertEqual(normalize_chord_name("C# Major"), "C#")
         self.assertEqual(normalize_chord_name("B diminished"), "Bdim")
+        self.assertEqual(normalize_chord_name("C_7"), "C7")
+        self.assertEqual(normalize_chord_name("G dominant 7"), "G7")
 
 
 class ChordPracticeEvaluatorTests(unittest.TestCase):

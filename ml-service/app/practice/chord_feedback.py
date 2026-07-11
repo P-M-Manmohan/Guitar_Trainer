@@ -6,6 +6,18 @@ from app.audio.chord_audio import AudioChordResult, normalize_chord_name
 
 Fingering = Dict[str, Dict[str, int]]
 
+HOME_DEMO_CHORDS = {
+    "A", "Am", "C7", "C", "D7", "D", "Dm", "E", "Em", "G7", "G"
+}
+
+
+def display_chord_name(chord: str) -> str:
+    if chord.endswith("m"):
+        return f"{chord[:-1]} Minor"
+    if chord.endswith("7"):
+        return chord
+    return f"{chord} Major"
+
 EXPECTED_FINGERINGS: Dict[str, List[Fingering]] = {
     "C": [
         {
@@ -252,15 +264,34 @@ class ChordPracticeEvaluator:
                 timing_warning=timing_warning,
             )
 
+        if predicted_chord == "Adjusting":
+            return self._build_feedback(
+                target_chord="Unknown",
+                status="analyzing",
+                overall_score=0,
+                placement_correct=False,
+                audio_correct=False,
+                predicted_chord=predicted_chord,
+                chord_confidence=chord_confidence,
+                audio_result=audio_result,
+                summary="Analyzing chord shape.",
+                instruction="Hold the chord steady for a moment.",
+                finger_feedback=[],
+                timing_warning=timing_warning,
+            )
+
         classified_chord = normalize_chord_name(predicted_chord or "")
         if (
-            classified_chord in EXPECTED_FINGERINGS
+            classified_chord in HOME_DEMO_CHORDS
             and chord_confidence >= 0.60
         ):
             visual_chord = classified_chord
-            finger_feedback, placement_score = self._best_variant_feedback(
-                EXPECTED_FINGERINGS[classified_chord], finger_placement
-            )
+            if classified_chord in EXPECTED_FINGERINGS:
+                finger_feedback, placement_score = self._best_variant_feedback(
+                    EXPECTED_FINGERINGS[classified_chord], finger_placement
+                )
+            else:
+                finger_feedback, placement_score = [], 0.0
             placement_score = max(placement_score, chord_confidence)
         else:
             visual_chord, finger_feedback, placement_score = self._best_chord_match(
@@ -270,7 +301,7 @@ class ChordPracticeEvaluator:
             item.correct for item in finger_feedback
         ):
             if (
-                classified_chord in EXPECTED_FINGERINGS
+                classified_chord in HOME_DEMO_CHORDS
                 and chord_confidence >= 0.60
             ):
                 visual_chord = classified_chord
@@ -294,8 +325,9 @@ class ChordPracticeEvaluator:
             )
 
         status = "recognized"
-        summary = f"This is Chord {visual_chord}."
-        instruction = f"This is Chord {visual_chord}."
+        visible_name = display_chord_name(visual_chord)
+        summary = f"This is Chord {visible_name}."
+        instruction = f"This is Chord {visible_name}."
         overall_score = int(round(placement_score * 100))
         return self._build_feedback(
             target_chord=visual_chord,

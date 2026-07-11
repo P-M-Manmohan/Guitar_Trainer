@@ -242,6 +242,8 @@ def normalize_chord_name(chord_name: str) -> str:
     root = f"{match.group(1).upper()}{match.group(2)}"
     root = FLAT_TO_SHARP.get(root.upper(), root.upper())
     suffix = match.group(3).strip().lower()
+    if suffix.startswith("7") or "dominant 7" in suffix:
+        return f"{root}7"
     if suffix.startswith("dim") or "diminished" in suffix:
         return f"{root}dim"
     is_minor = (suffix.startswith("m") and not suffix.startswith("maj")) or "minor" in suffix or suffix == "min"

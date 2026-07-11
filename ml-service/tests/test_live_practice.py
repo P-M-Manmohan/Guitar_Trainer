@@ -131,7 +131,31 @@ class PracticeEvaluatorTests(unittest.TestCase):
         )
         self.assertEqual(feedback.status, "recognized")
         self.assertEqual(feedback.target_chord, "G")
-        self.assertEqual(feedback.instruction, "This is Chord G.")
+        self.assertEqual(feedback.instruction, "This is Chord G Major.")
+
+    def test_free_mode_supports_trained_seventh_chords(self):
+        audio = self.analyzer.analyze_base64_audio(None)
+        feedback = self.evaluator.recognize(
+            predicted_chord="C_7",
+            chord_confidence=0.95,
+            finger_placement={"index": {"string": 2, "fret": 1}},
+            audio_result=audio,
+            hand_detected=True,
+        )
+        self.assertEqual(feedback.status, "recognized")
+        self.assertEqual(feedback.target_chord, "C7")
+        self.assertEqual(feedback.instruction, "This is Chord C7.")
+
+    def test_free_mode_hides_warmup_as_analyzing(self):
+        audio = self.analyzer.analyze_base64_audio(None)
+        feedback = self.evaluator.recognize(
+            predicted_chord="Adjusting",
+            chord_confidence=0.99,
+            finger_placement={"index": {"string": 2, "fret": 1}},
+            audio_result=audio,
+            hand_detected=True,
+        )
+        self.assertEqual(feedback.status, "analyzing")
 
     def test_selected_mode_accepts_any_database_variant(self):
         audio = self.analyzer.analyze_base64_audio(None)

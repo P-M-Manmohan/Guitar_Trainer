@@ -181,7 +181,7 @@ export default function PracticeSessionScreen() {
     (frame) => {
       "worklet";
       if (!analysisEnabled) return;
-      runAtTargetFps(1, () => {
+      runAtTargetFps(mode === "free" ? 2 : 1, () => {
         "worklet";
         const landscape = frame.orientation.startsWith("landscape");
         const rotation =
@@ -204,7 +204,7 @@ export default function PracticeSessionScreen() {
         sendFrameToJS(bytesToBase64(rgb));
       });
     },
-    [analysisEnabled, resize, sendFrameToJS]
+    [analysisEnabled, mode, resize, sendFrameToJS]
   );
 
   const finishRecording = useCallback((video: VideoFile, audioUri: string | null) => {
