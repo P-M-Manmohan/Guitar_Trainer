@@ -177,10 +177,26 @@ class ChordPracticeEvaluator:
                 timing_warning=timing_warning,
             )
 
-        finger_feedback, placement_score = self._best_variant_feedback(variants, finger_placement)
-        placement_correct = bool(finger_feedback) and all(
-            item.correct for item in finger_feedback
+        matching_feedback = next(
+            (
+                feedback
+                for variant in variants
+                if (feedback := self._score_fingers(variant, finger_placement))
+                and all(item.correct for item in feedback)
+            ),
+            None,
         )
+        placement_correct = matching_feedback is not None
+        if matching_feedback is not None:
+            finger_feedback = matching_feedback
+            placement_score = 1.0
+        else:
+            # Backend variants arrive in position order, so position zero is the
+            # simplest correction target when none of the valid shapes match.
+            finger_feedback = self._score_fingers(variants[0], finger_placement)
+            placement_score = sum(
+                self._finger_score(item) for item in finger_feedback
+            ) / max(1, len(finger_feedback))
         # Live practice is intentionally visual-only. Audio fields remain in the
         # response for backwards compatibility, but do not affect the result.
         audio_correct = False
@@ -236,12 +252,32 @@ class ChordPracticeEvaluator:
                 timing_warning=timing_warning,
             )
 
-        visual_chord, finger_feedback, placement_score = self._best_chord_match(
-            finger_placement
-        )
+        classified_chord = normalize_chord_name(predicted_chord or "")
+        if (
+            classified_chord in EXPECTED_FINGERINGS
+            and chord_confidence >= 0.60
+        ):
+            visual_chord = classified_chord
+            finger_feedback, placement_score = self._best_variant_feedback(
+                EXPECTED_FINGERINGS[classified_chord], finger_placement
+            )
+            placement_score = max(placement_score, chord_confidence)
+        else:
+            visual_chord, finger_feedback, placement_score = self._best_chord_match(
+                finger_placement
+            )
         if not visual_chord or placement_score < 0.99 or not all(
             item.correct for item in finger_feedback
         ):
+            if (
+                classified_chord in EXPECTED_FINGERINGS
+                and chord_confidence >= 0.60
+            ):
+                visual_chord = classified_chord
+            else:
+                visual_chord = None
+
+        if not visual_chord:
             return self._build_feedback(
                 target_chord="Unknown",
                 status="no_chord_detected",

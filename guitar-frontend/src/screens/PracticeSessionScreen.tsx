@@ -97,7 +97,6 @@ export default function PracticeSessionScreen() {
   const stoppingRef = useRef(false);
   const recordingRef = useRef(false);
   const requestInFlightRef = useRef(false);
-  const lastFeedbackRef = useRef({ key: "", at: 0 });
   const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const maxDurationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -128,7 +127,7 @@ export default function PracticeSessionScreen() {
   const hasPermission = hasCameraPermission && microphonePermission?.granted;
 
   const showFeedback = useCallback((response: PracticeAnalysisResponse) => {
-    if (response.frames_considered < 3 || response.raw_status !== response.stable_status) {
+    if (response.raw_status !== response.stable_status) {
       return;
     }
     const visibleStatuses = new Set([
@@ -141,12 +140,6 @@ export default function PracticeSessionScreen() {
       return;
     }
     const message = response.instruction || response.summary;
-    const key = `${response.target_chord}:${response.status}:${message}`;
-    const now = Date.now();
-    if (key === lastFeedbackRef.current.key && now - lastFeedbackRef.current.at < 7000) {
-      return;
-    }
-    lastFeedbackRef.current = { key, at: now };
     setFeedback({ title: feedbackTitle(response.status), message });
     if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
     feedbackTimerRef.current = setTimeout(() => setFeedback(null), FEEDBACK_DURATION_MS);

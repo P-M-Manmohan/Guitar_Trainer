@@ -51,7 +51,11 @@ class FretboardDetector:
                 
         return detected_lines
 
-    def detect_neck_bbox(self, frame_bgr) -> Optional[Dict[str, Tuple[float, float]]]:
+    def detect_neck_bbox(
+        self,
+        frame_bgr,
+        search_bbox: Optional[Dict[str, Tuple[float, float]]] = None,
+    ) -> Optional[Dict[str, Tuple[float, float]]]:
         """
         Estimates a normalized guitar neck quadrilateral from detected near-horizontal lines.
 
@@ -65,9 +69,27 @@ class FretboardDetector:
         if height <= 0 or width <= 0:
             return None
 
-        lines = self.detect_neck_lines(frame_bgr)
+        x_offset = 0
+        y_offset = 0
+        search_frame = frame_bgr
+        if search_bbox is not None:
+            xs = [point[0] for point in search_bbox.values()]
+            ys = [point[1] for point in search_bbox.values()]
+            x_offset = max(0, int(min(xs) * width))
+            x_end = min(width, int(max(xs) * width))
+            y_offset = max(0, int(min(ys) * height))
+            y_end = min(height, int(max(ys) * height))
+            if x_end > x_offset and y_end > y_offset:
+                search_frame = frame_bgr[y_offset:y_end, x_offset:x_end]
+
+        lines = self.detect_neck_lines(search_frame)
         if not lines:
             return None
+
+        lines = [
+            (x1 + x_offset, y1 + y_offset, x2 + x_offset, y2 + y_offset)
+            for x1, y1, x2, y2 in lines
+        ]
 
         candidate_lines = []
         endpoint_xs = []
@@ -138,18 +160,74 @@ class FretboardDetector:
         neck_bbox: Optional[Dict[str, Tuple[float, float]]] = None,
         frame_bgr: Optional[np.ndarray] = None
     ) -> Dict[str, Tuple[float, float]]:
-        if neck_bbox is not None:
-            return neck_bbox
+        detected_bbox = (
+            self.detect_neck_bbox(frame_bgr, neck_bbox)
+            if frame_bgr is not None
+            else None
+        )
+        return detected_bbox or neck_bbox or self.default_neck_bbox
 
-        detected_bbox = self.detect_neck_bbox(frame_bgr) if frame_bgr is not None else None
-        return detected_bbox or self.default_neck_bbox
+    def detect_fret_boundaries(
+        self,
+        frame_bgr: Optional[np.ndarray],
+        neck_bbox: Dict[str, Tuple[float, float]],
+    ) -> List[float]:
+        """Return normalized x positions for visible nut/fret wires."""
+        if frame_bgr is None:
+            return []
+        height, width = frame_bgr.shape[:2]
+        xs = [point[0] for point in neck_bbox.values()]
+        ys = [point[1] for point in neck_bbox.values()]
+        x0 = max(0, int(min(xs) * width))
+        x1 = min(width, int(max(xs) * width))
+        y0 = max(0, int(min(ys) * height))
+        y1 = min(height, int(max(ys) * height))
+        if x1 - x0 < 20 or y1 - y0 < 12:
+            return []
+
+        roi = frame_bgr[y0:y1, x0:x1]
+        gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+        edges = cv2.Canny(cv2.GaussianBlur(gray, (3, 3), 0), 45, 130)
+        lines = cv2.HoughLinesP(
+            edges,
+            rho=1,
+            theta=np.pi / 180,
+            threshold=max(10, int((y1 - y0) * 0.25)),
+            minLineLength=max(8, int((y1 - y0) * 0.38)),
+            maxLineGap=max(3, int((y1 - y0) * 0.12)),
+        )
+        if lines is None:
+            return []
+
+        candidates = []
+        for line in lines:
+            lx1, ly1, lx2, ly2 = line[0]
+            dx = lx2 - lx1
+            dy = ly2 - ly1
+            angle = abs(np.degrees(np.arctan2(dy, dx)))
+            if 55 <= angle <= 125:
+                candidates.append(x0 + (lx1 + lx2) / 2.0)
+        if len(candidates) < 3:
+            return []
+
+        candidates.sort()
+        cluster_distance = max(2.0, width * 0.018)
+        clusters: List[List[float]] = []
+        for candidate in candidates:
+            if not clusters or candidate - np.mean(clusters[-1]) > cluster_distance:
+                clusters.append([candidate])
+            else:
+                clusters[-1].append(candidate)
+        boundaries = [float(np.mean(cluster)) / width for cluster in clusters]
+        return boundaries if len(boundaries) >= 3 else []
 
     def map_finger_to_string_and_fret(
         self, 
         finger_x: float, 
         finger_y: float,
         neck_bbox: Optional[Dict[str, Tuple[float, float]]] = None,
-        frame_bgr: Optional[np.ndarray] = None
+        frame_bgr: Optional[np.ndarray] = None,
+        fret_boundaries: Optional[List[float]] = None,
     ) -> Tuple[int, int]:
         """
         Maps normalized coordinates of a fingertip (0.0 to 1.0) to a string (1-6) and fret (0-5).
@@ -194,6 +272,18 @@ class FretboardDetector:
         
         fret = int(relative_x * self.num_frets) + 1
         fret = min(fret, self.num_frets)
+        if fret_boundaries and len(fret_boundaries) >= 3:
+            gaps = np.diff(fret_boundaries)
+            nut_on_left = float(np.mean(gaps[: len(gaps) // 2 or 1])) >= float(
+                np.mean(gaps[len(gaps) // 2 :])
+            )
+            ordered = fret_boundaries if nut_on_left else list(reversed(fret_boundaries))
+            coordinate = finger_x if nut_on_left else 1.0 - finger_x
+            ordered_coordinates = ordered if nut_on_left else [1.0 - value for value in ordered]
+            ordered_coordinates.sort()
+            if coordinate >= ordered_coordinates[0]:
+                fret = int(np.searchsorted(ordered_coordinates, coordinate, side="right"))
+                fret = max(1, min(fret, len(ordered_coordinates) - 1))
 
         # 3. Map Y coordinate to string number (1 to 6)
         # String 1 is high E (bottom), String 6 is low E (top)
@@ -215,6 +305,7 @@ class FretboardDetector:
         Returns a dictionary mapping each finger to its string/fret coordinate.
         """
         neck_bbox = self._resolve_neck_bbox(neck_bbox, frame_bgr)
+        fret_boundaries = self.detect_fret_boundaries(frame_bgr, neck_bbox)
 
         finger_tips = {
             "thumb": landmarks[4],
@@ -226,7 +317,12 @@ class FretboardDetector:
 
         result = {}
         for finger_name, tip in finger_tips.items():
-            string, fret = self.map_finger_to_string_and_fret(tip["x"], tip["y"], neck_bbox)
+            string, fret = self.map_finger_to_string_and_fret(
+                tip["x"],
+                tip["y"],
+                neck_bbox,
+                fret_boundaries=fret_boundaries,
+            )
             result[finger_name] = {
                 "string": string,
                 "fret": fret,

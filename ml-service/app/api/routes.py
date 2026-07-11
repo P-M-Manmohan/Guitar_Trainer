@@ -161,6 +161,7 @@ def analyze_practice(payload: PracticeAnalysisRequest):
         confidence = 0.0
         placement = None
         if landmarks:
+            chord_name, confidence = classifier.predict(landmarks)
             placement = fret_detector.analyze_hand_placement(
                 landmarks, _neck_bbox_to_dict(payload.neck_bbox), frame
             )
