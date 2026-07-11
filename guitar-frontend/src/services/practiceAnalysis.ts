@@ -27,10 +27,6 @@ export type PracticeAnalysisRequest = {
   image_format: "rgb";
   image_width: number;
   image_height: number;
-  audio?: string;
-  audio_format: "pcm_s16le";
-  audio_sample_rate: number;
-  audio_channels: number;
   expected_fingerings?: ExpectedFingering[];
   neck_bbox: {
     top_left: [number, number];

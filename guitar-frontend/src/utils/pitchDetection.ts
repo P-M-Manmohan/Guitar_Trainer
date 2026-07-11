@@ -18,7 +18,11 @@ export function centsFromTarget(frequency: number, target: number) {
   return 1200 * Math.log2(frequency / target);
 }
 
-export function detectPitch(samples: Float32Array, sampleRate: number) {
+export function detectPitch(
+  samples: Float32Array,
+  sampleRate: number,
+  targetFrequency?: number
+) {
   if (samples.length < 512) return null;
 
   let mean = 0;
@@ -33,8 +37,20 @@ export function detectPitch(samples: Float32Array, sampleRate: number) {
   }
   if (Math.sqrt(energy / samples.length) < 0.012) return null;
 
-  const minLag = Math.floor(sampleRate / 360);
-  const maxLag = Math.min(Math.floor(sampleRate / 70), samples.length >> 1);
+  // Restrict detection around the selected string. This prevents a strong
+  // harmonic from being mistaken for the fundamental while still allowing a
+  // string to start several semitones flat or sharp.
+  const minFrequency = targetFrequency
+    ? targetFrequency * 2 ** (-4 / 12)
+    : 70;
+  const maxFrequency = targetFrequency
+    ? targetFrequency * 2 ** (4 / 12)
+    : 360;
+  const minLag = Math.max(2, Math.floor(sampleRate / maxFrequency));
+  const maxLag = Math.min(
+    Math.ceil(sampleRate / minFrequency),
+    samples.length >> 1
+  );
   const difference = new Float32Array(maxLag + 1);
   for (let lag = minLag; lag <= maxLag; lag += 1) {
     let sum = 0;
@@ -45,30 +61,42 @@ export function detectPitch(samples: Float32Array, sampleRate: number) {
     difference[lag] = sum;
   }
 
+  // YIN cumulative mean normalized difference. Compute the whole curve before
+  // choosing a minimum; comparing partly-normalized values biases the result.
   let runningSum = 0;
-  let bestLag = -1;
-  let bestValue = Number.POSITIVE_INFINITY;
   for (let lag = minLag; lag <= maxLag; lag += 1) {
     runningSum += difference[lag];
-    const normalized = runningSum > 0 ? (difference[lag] * (lag - minLag + 1)) / runningSum : 1;
-    difference[lag] = normalized;
-    if (normalized < 0.14) {
-      while (lag + 1 <= maxLag && difference[lag + 1] < difference[lag]) lag += 1;
+    difference[lag] = runningSum > 0
+      ? (difference[lag] * (lag - minLag + 1)) / runningSum
+      : 1;
+  }
+
+  let bestLag = -1;
+  let bestValue = Number.POSITIVE_INFINITY;
+  for (let lag = minLag + 1; lag < maxLag; lag += 1) {
+    const value = difference[lag];
+    if (value < bestValue) {
+      bestValue = value;
+      bestLag = lag;
+    }
+    if (
+      value < 0.16 &&
+      value <= difference[lag - 1] &&
+      value <= difference[lag + 1]
+    ) {
       bestLag = lag;
       break;
     }
-    if (normalized < bestValue) {
-      bestValue = normalized;
-      bestLag = lag;
-    }
   }
 
-  if (bestLag < minLag || difference[bestLag] > 0.3) return null;
+  if (bestLag < minLag || difference[bestLag] > 0.28) return null;
   const left = difference[Math.max(minLag, bestLag - 1)];
   const middle = difference[bestLag];
   const right = difference[Math.min(maxLag, bestLag + 1)];
   const denominator = 2 * (2 * middle - left - right);
   const refinedLag = denominator === 0 ? bestLag : bestLag + (right - left) / denominator;
   const frequency = sampleRate / refinedLag;
-  return frequency >= 70 && frequency <= 360 ? frequency : null;
+  return frequency >= minFrequency && frequency <= maxFrequency
+    ? frequency
+    : null;
 }

@@ -1,5 +1,4 @@
 import { router } from "expo-router";
-import { Image } from "expo-image";
 import { useEffect, useState } from "react";
 import { Dimensions, ScrollView, Text, TouchableOpacity, View } from "react-native";
 
@@ -20,12 +19,6 @@ function fretNumber(value: string) {
   return -1;
 }
 
-function diagramUri(svg: string) {
-  if (!svg) return undefined;
-  if (/^(https?:|data:)/.test(svg)) return svg;
-  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
-}
-
 function placementLines(position: ChordPosition) {
   const placements: string[] = [];
   for (let index = 0; index < Math.min(6, position.frets.length, position.fingers.length); index += 1) {
@@ -38,6 +31,47 @@ function placementLines(position: ChordPosition) {
   const openStrings = [...position.frets].flatMap((fret, index) => fret === "0" ? [`Play string ${6 - index} open`] : []);
   const mutedStrings = [...position.frets].flatMap((fret, index) => /x/i.test(fret) ? [`Mute string ${6 - index}`] : []);
   return [...placements, ...openStrings, ...mutedStrings];
+}
+
+function ChordDiagram({ position }: { position: ChordPosition }) {
+  const width = 220;
+  const height = 260;
+  const left = 40;
+  const top = 42;
+  const stringGap = 28;
+  const fretGap = 32;
+  const frets = [...position.frets].map(fretNumber);
+  const positiveFrets = frets.filter((fret) => fret > 0);
+  const minimumFret = positiveFrets.length ? Math.min(...positiveFrets) : 1;
+  const startFret = minimumFret <= 3 ? 1 : minimumFret;
+  const barreFret = position.barres || 0;
+  const barreStrings = frets.flatMap((fret, index) =>
+    fret === barreFret && position.fingers[index] === "1" ? [index] : []
+  );
+
+  return (
+    <View
+      accessibilityLabel="Chord diagram"
+      style={{ width, height, backgroundColor: "white", borderRadius: 12, marginTop: 12 }}
+    >
+      {Array.from({ length: 6 }, (_, index) => (
+        <View key={`string-${index}`} style={{ position: "absolute", left: left + index * stringGap, top, width: 2, height: fretGap * 5, backgroundColor: "#111827" }} />
+      ))}
+      {Array.from({ length: 6 }, (_, index) => (
+        <View key={`fret-${index}`} style={{ position: "absolute", left, top: top + index * fretGap, width: stringGap * 5, height: index === 0 && startFret === 1 ? 4 : 2, backgroundColor: "#111827" }} />
+      ))}
+      {startFret > 1 && <Text style={{ position: "absolute", left: 9, top: top + 5, color: "#111827", fontWeight: "bold" }}>{startFret}fr</Text>}
+      {frets.map((fret, index) => {
+        if (fret < 0 || fret === 0) {
+          return <Text key={`marker-${index}`} style={{ position: "absolute", left: left + index * stringGap - 6, top: 12, color: "#111827", fontWeight: "bold" }}>{fret === 0 ? "○" : "×"}</Text>;
+        }
+        if (barreFret === fret && position.fingers[index] === "1") return null;
+        const displayedFret = startFret === 1 ? fret : fret - startFret + 1;
+        return <View key={`dot-${index}`} style={{ position: "absolute", left: left + index * stringGap - 11, top: top + (displayedFret - 0.5) * fretGap - 11, width: 22, height: 22, borderRadius: 11, backgroundColor: "#111827", justifyContent: "center", alignItems: "center" }}><Text style={{ color: "white", fontSize: 12, fontWeight: "bold" }}>{position.fingers[index] === "0" ? "" : position.fingers[index]}</Text></View>;
+      })}
+      {barreStrings.length >= 2 && <View style={{ position: "absolute", left: left + Math.min(...barreStrings) * stringGap - 11, top: top + ((startFret === 1 ? barreFret : barreFret - startFret + 1) - 0.5) * fretGap - 11, width: (Math.max(...barreStrings) - Math.min(...barreStrings)) * stringGap + 22, height: 22, borderRadius: 11, backgroundColor: "#111827", justifyContent: "center" }}><Text style={{ color: "white", marginLeft: 7, fontSize: 12, fontWeight: "bold" }}>1</Text></View>}
+    </View>
+  );
 }
 
 function expectedFingering(position: ChordPosition): ExpectedFingering {
@@ -94,7 +128,7 @@ export default function ChordDetailScreen({ chord, root, quality }: Props) {
       <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} onMomentumScrollEnd={(event) => setActivePosition(Math.round(event.nativeEvent.contentOffset.x / pageWidth))} style={{ marginTop: 14 }}>
         {positions.map((position, index) => <View key={`${position.position_index ?? index}-${position.frets}`} style={{ width: pageWidth, backgroundColor: "#1F2937", borderRadius: 15, padding: 20 }}>
           <Text style={{ color: "white", textAlign: "center", fontSize: 18, fontWeight: "bold" }}>Position {index + 1}</Text>
-          <Image source={diagramUri(position.diagram)} contentFit="contain" style={{ width: "100%", height: 280, marginTop: 12 }} accessibilityLabel={`${chord.name} chord diagram, position ${index + 1}`} />
+          <View style={{ alignItems: "center" }}><ChordDiagram position={position} /></View>
           <Text style={{ color: "white", fontSize: 20, fontWeight: "bold", marginTop: 8 }}>Finger placement</Text>
           {placementLines(position).map((line) => <Text key={line} style={{ color: "#E5E7EB", fontSize: 16, lineHeight: 24, marginTop: 8 }}>• {line}</Text>)}
           {!!position.capo && <Text style={{ color: "#FBBF24", marginTop: 12 }}>Capo required</Text>}

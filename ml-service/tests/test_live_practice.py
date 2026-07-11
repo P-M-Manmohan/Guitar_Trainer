@@ -79,10 +79,10 @@ class PracticeEvaluatorTests(unittest.TestCase):
             expected_fingerings=self.c_fingering,
         )
         self.assertEqual(feedback.status, "fix_fingering")
-        self.assertIn("Index: string 2, fret 1", feedback.instruction)
-        self.assertIn("Ring: string 5, fret 3", feedback.instruction)
+        self.assertIn("2 of 3 fingers are correctly placed", feedback.instruction)
+        self.assertIn("index finger", feedback.instruction)
 
-    def test_selected_shape_with_wrong_sound_uses_requested_message(self):
+    def test_selected_shape_ignores_audio_and_uses_visual_placement(self):
         wrong_audio = self.analyzer.analyze_base64_audio(
             synthesize_pcm([293.66, 369.99, 440.0]),
             "C",
@@ -103,10 +103,10 @@ class PracticeEvaluatorTests(unittest.TestCase):
             hand_detected=True,
             expected_fingerings=self.c_fingering,
         )
-        self.assertEqual(feedback.status, "check_tuning_or_strum")
-        self.assertIn("not properly tuned", feedback.instruction)
+        self.assertEqual(feedback.status, "correct")
+        self.assertIn("Perfect!", feedback.instruction)
 
-    def test_free_mode_recognizes_agreeing_visual_and_audio_chord(self):
+    def test_free_mode_recognizes_visual_chord_without_audio(self):
         audio = self.analyzer.analyze_base64_audio(
             synthesize_pcm([196.0, 246.94, 293.66]),
             None,
@@ -127,6 +127,7 @@ class PracticeEvaluatorTests(unittest.TestCase):
         )
         self.assertEqual(feedback.status, "recognized")
         self.assertEqual(feedback.target_chord, "G")
+        self.assertEqual(feedback.instruction, "This is Chord G.")
 
 
 class SessionSmootherTests(unittest.TestCase):

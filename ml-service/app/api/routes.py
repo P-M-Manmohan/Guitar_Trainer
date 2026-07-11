@@ -13,7 +13,7 @@ from app.api.schemas import (
     PracticeAnalysisRequest,
     PracticeAnalysisResponse,
 )
-from app.audio.chord_audio import ChordAudioAnalyzer
+from app.audio.chord_audio import AudioChordResult
 from app.practice.chord_feedback import ChordPracticeEvaluator
 from app.practice.session_smoothing import PracticeSessionSmoother
 from app.vision.fingering_classifier import ChordClassifier
@@ -30,7 +30,6 @@ tracker = None
 live_tracker = None
 classifier = ChordClassifier()
 fret_detector = FretboardDetector()
-audio_analyzer = ChordAudioAnalyzer()
 practice_evaluator = ChordPracticeEvaluator()
 practice_smoother = PracticeSessionSmoother(window_size=5)
 frame_tracker_lock = Lock()
@@ -162,20 +161,18 @@ def analyze_practice(payload: PracticeAnalysisRequest):
         confidence = 0.0
         placement = None
         if landmarks:
-            chord_name, confidence = classifier.predict(landmarks)
             placement = fret_detector.analyze_hand_placement(
                 landmarks, _neck_bbox_to_dict(payload.neck_bbox), frame
             )
 
-    timing_warning = _timing_warning(
-        payload.frame_timestamp_ms, payload.audio_timestamp_ms
-    )
-    audio_result = audio_analyzer.analyze_base64_audio(
-        payload.audio,
-        payload.target_chord or chord_name,
-        payload.audio_format,
-        payload.audio_sample_rate,
-        payload.audio_channels,
+    timing_warning = None
+    audio_result = AudioChordResult(
+        audio_detected=False,
+        predicted_chord=None,
+        confidence=0.0,
+        matches_target=False,
+        message="Audio analysis is disabled; feedback uses finger placement only.",
+        pitch_classes=[],
     )
 
     if payload.mode == "free":

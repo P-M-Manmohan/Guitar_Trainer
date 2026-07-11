@@ -118,8 +118,8 @@ def run_tests():
             True,
             timing_warning="Camera frame and audio are 900 ms apart.",
         )
-        assert timing_feedback.status == "resync_audio_video"
-        print("Success: Audio/video timestamp mismatch prevents false tuning feedback.")
+        assert timing_feedback.status == "correct"
+        print("Success: Practice feedback is based on visual finger placement only.")
 
         smoother = PracticeSessionSmoother(window_size=3)
         smoother.smooth("session-1", "C", "fix_fingering", 40)

@@ -181,38 +181,20 @@ class ChordPracticeEvaluator:
         placement_correct = bool(finger_feedback) and all(
             item.correct for item in finger_feedback
         )
-        audio_correct = audio_result.matches_target
+        # Live practice is intentionally visual-only. Audio fields remain in the
+        # response for backwards compatibility, but do not affect the result.
+        audio_correct = False
 
-        if timing_warning and audio_result.audio_detected:
-            audio_correct = False
-            status = "resync_audio_video"
-            summary = "The camera frame and audio clip do not look synchronized."
-            instruction = "Capture the frame at the strum moment or send closer timestamps with the audio clip."
-        elif placement_correct and audio_correct:
+        if placement_correct:
             status = "correct"
-            summary = f"Nice, that looks and sounds like {normalized_target}."
-            instruction = "Keep the same shape and strum cleanly."
-        elif not placement_correct:
+            summary = f"Perfect! That's how you play {normalized_target}."
+            instruction = f"Perfect! That's how you play {normalized_target} chord."
+        else:
             status = "fix_fingering"
             summary = f"Your {normalized_target} shape needs adjustment."
             instruction = self._finger_placement_instruction(finger_feedback)
-        elif audio_result.audio_detected:
-            status = "check_tuning_or_strum"
-            summary = "Your finger placement looks close, but the sound does not match."
-            instruction = (
-                "Your finger placements are correct, but the sound it produces seems off. "
-                "Make sure not to mute any other strings accidentally, or it seems your guitar "
-                "is not properly tuned."
-            )
-        else:
-            status = "need_audio"
-            summary = "Your finger placement looks close, but I need a clear strum to confirm the chord."
-            instruction = "Strum once near the microphone after placing your fingers."
 
-        audio_score = 1.0 if audio_correct else 0.0
-        if not audio_result.audio_detected:
-            audio_score = 0.25 if placement_correct else 0.0
-        overall_score = int(round((placement_score * 0.65 + audio_score * 0.35) * 100))
+        overall_score = int(round(placement_score * 100))
 
         return self._build_feedback(
             target_chord=normalized_target,
@@ -238,12 +220,9 @@ class ChordPracticeEvaluator:
         hand_detected: bool,
         timing_warning: Optional[str] = None,
     ) -> PracticeFeedback:
-        visual_chord = normalize_chord_name(predicted_chord or "")
-        variants = EXPECTED_FINGERINGS.get(visual_chord)
-
         if not hand_detected or not finger_placement:
             return self._build_feedback(
-                target_chord=visual_chord or "Unknown",
+                target_chord="Unknown",
                 status="no_hand_detected",
                 overall_score=0,
                 placement_correct=False,
@@ -257,9 +236,14 @@ class ChordPracticeEvaluator:
                 timing_warning=timing_warning,
             )
 
-        if not visual_chord or variants is None or chord_confidence < 0.50:
+        visual_chord, finger_feedback, placement_score = self._best_chord_match(
+            finger_placement
+        )
+        if not visual_chord or placement_score < 0.99 or not all(
+            item.correct for item in finger_feedback
+        ):
             return self._build_feedback(
-                target_chord=visual_chord or "Unknown",
+                target_chord="Unknown",
                 status="no_chord_detected",
                 overall_score=0,
                 placement_correct=False,
@@ -267,52 +251,22 @@ class ChordPracticeEvaluator:
                 predicted_chord=predicted_chord,
                 chord_confidence=chord_confidence,
                 audio_result=audio_result,
-                summary="No supported chord shape is stable yet.",
-                instruction="Hold one chord shape steady, then strum once.",
-                finger_feedback=[],
+                summary="Not a Chord",
+                instruction="Not a Chord",
+                finger_feedback=finger_feedback,
                 timing_warning=timing_warning,
             )
 
-        finger_feedback, placement_score = self._best_variant_feedback(
-            variants, finger_placement
-        )
-        placement_consistent = placement_score >= 0.65
-        audio_chord = normalize_chord_name(audio_result.predicted_chord or "")
-        audio_agrees = (
-            audio_result.audio_detected
-            and audio_result.confidence >= 0.45
-            and audio_chord == visual_chord
-        )
-
-        if not placement_consistent:
-            status = "no_chord_detected"
-            summary = "The hand shape is not stable enough to identify."
-            instruction = "Keep the chord inside the guide and hold the shape steady."
-        elif not audio_result.audio_detected:
-            status = "need_audio"
-            summary = f"Your hand looks closest to {visual_chord}."
-            instruction = "Strum once near the microphone to confirm the chord."
-        elif audio_agrees:
-            status = "recognized"
-            summary = f"You are playing {visual_chord}."
-            instruction = f"Chord detected: {visual_chord}."
-        else:
-            status = "check_tuning_or_strum"
-            summary = f"Your hand looks like {visual_chord}, but the sound does not match."
-            instruction = (
-                f"Your finger placement looks like {visual_chord}, but the sound seems off. "
-                "Make sure every required string rings clearly and tune the guitar."
-            )
-
-        overall_score = int(
-            round((placement_score * 0.65 + (1.0 if audio_agrees else 0.0) * 0.35) * 100)
-        )
+        status = "recognized"
+        summary = f"This is Chord {visual_chord}."
+        instruction = f"This is Chord {visual_chord}."
+        overall_score = int(round(placement_score * 100))
         return self._build_feedback(
             target_chord=visual_chord,
             status=status,
             overall_score=overall_score,
-            placement_correct=placement_consistent,
-            audio_correct=audio_agrees,
+            placement_correct=True,
+            audio_correct=False,
             predicted_chord=predicted_chord,
             chord_confidence=chord_confidence,
             audio_result=audio_result,
@@ -386,6 +340,31 @@ class ChordPracticeEvaluator:
                 best_feedback = feedback
         return best_feedback, max(0.0, best_score)
 
+    def _best_chord_match(
+        self,
+        actual: Dict[str, Dict[str, Any]],
+    ) -> Tuple[Optional[str], List[FingerFeedback], float]:
+        best_chord = None
+        best_feedback: List[FingerFeedback] = []
+        best_score = -1.0
+        for chord, variants in EXPECTED_FINGERINGS.items():
+            feedback, score = self._best_variant_feedback(variants, actual)
+            expected_fingers = {item.finger for item in feedback}
+            unexpected_fingers = [
+                finger
+                for finger, position in actual.items()
+                if finger != "thumb"
+                and finger not in expected_fingers
+                and int(position.get("string", 0)) > 0
+                and int(position.get("fret", 0)) > 0
+            ]
+            score = max(0.0, score - 0.25 * len(unexpected_fingers))
+            if score > best_score:
+                best_chord = chord
+                best_feedback = feedback
+                best_score = score
+        return best_chord, best_feedback, max(0.0, best_score)
+
     def _score_fingers(
         self,
         expected: Fingering,
@@ -439,8 +418,9 @@ class ChordPracticeEvaluator:
     def _finger_placement_instruction(self, finger_feedback: List[FingerFeedback]) -> str:
         if not finger_feedback:
             return "Check that each finger is pressing the expected string and fret."
-        placements = [
-            f"{item.finger.capitalize()}: string {item.expected_string}, fret {item.expected_fret}."
-            for item in finger_feedback
-        ]
-        return "Place your fingers as follows: " + " ".join(placements)
+        correct_count = sum(1 for item in finger_feedback if item.correct)
+        incorrect = [item.message for item in finger_feedback if not item.correct]
+        count_message = (
+            f"{correct_count} of {len(finger_feedback)} fingers are correctly placed. "
+        )
+        return count_message + " ".join(incorrect)

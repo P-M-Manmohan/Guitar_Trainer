@@ -101,10 +101,11 @@ class ChordPracticeEvaluatorTests(unittest.TestCase):
 
         self.assertEqual(feedback.status, "fix_fingering")
         self.assertFalse(feedback.placement_correct)
-        self.assertIn("Index: string 2, fret 1", feedback.instruction)
-        self.assertIn("Ring: string 5, fret 3", feedback.instruction)
+        self.assertIn("2 of 3 fingers are correctly placed", feedback.instruction)
+        self.assertIn("index finger", feedback.instruction)
+        self.assertNotIn("ring finger is correctly placed", feedback.instruction)
 
-    def test_correct_shape_with_wrong_audio_returns_tuning_message(self):
+    def test_correct_shape_is_accepted_without_using_audio(self):
         wrong_audio = self.analyzer.analyze_base64_audio(
             synthesize_pcm([293.66, 369.99, 440.00]),
             "C",
@@ -126,9 +127,9 @@ class ChordPracticeEvaluatorTests(unittest.TestCase):
             expected_fingerings=self.expected,
         )
 
-        self.assertEqual(feedback.status, "check_tuning_or_strum")
+        self.assertEqual(feedback.status, "correct")
         self.assertTrue(feedback.placement_correct)
-        self.assertIn("not properly tuned", feedback.instruction)
+        self.assertIn("Perfect!", feedback.instruction)
 
 
 class PracticeSessionSmootherTests(unittest.TestCase):

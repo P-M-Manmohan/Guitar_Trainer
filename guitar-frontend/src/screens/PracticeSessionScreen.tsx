@@ -34,7 +34,7 @@ import { apiPost } from "../services/api";
 const ML_WIDTH = 216;
 const ML_HEIGHT = 384;
 const MAX_DURATION_MS = 30 * 60 * 1000;
-const FEEDBACK_DURATION_MS = 5000;
+const FEEDBACK_DURATION_MS = 3000;
 
 function bytesToBase64(bytes: Uint8Array) {
   "worklet";
@@ -71,8 +71,9 @@ function asFileUri(path: string) {
 
 function feedbackTitle(status: string) {
   if (status === "fix_fingering") return "Adjust Finger Placement";
+  if (status === "correct") return "Perfect!";
   if (status === "recognized") return "Chord Detected";
-  if (status === "check_tuning_or_strum") return "Check Your Sound";
+  if (status === "no_chord_detected") return "Not a Chord";
   return "Practice Feedback";
 }
 
@@ -96,7 +97,6 @@ export default function PracticeSessionScreen() {
   const stoppingRef = useRef(false);
   const recordingRef = useRef(false);
   const requestInFlightRef = useRef(false);
-  const latestAudioRef = useRef<string | null>(null);
   const lastFeedbackRef = useRef({ key: "", at: 0 });
   const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const maxDurationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -133,8 +133,9 @@ export default function PracticeSessionScreen() {
     }
     const visibleStatuses = new Set([
       "fix_fingering",
-      "check_tuning_or_strum",
+      "correct",
       "recognized",
+      "no_chord_detected",
     ]);
     if (!visibleStatuses.has(response.status)) {
       return;
@@ -164,10 +165,6 @@ export default function PracticeSessionScreen() {
           image_format: "rgb",
           image_width: ML_WIDTH,
           image_height: ML_HEIGHT,
-          audio: latestAudioRef.current || undefined,
-          audio_format: "pcm_s16le",
-          audio_sample_rate: 16000,
-          audio_channels: 1,
           expected_fingerings: expectedFingerings.length ? expectedFingerings : undefined,
           neck_bbox: {
             top_left: [0.08, 0.38],
@@ -274,9 +271,6 @@ export default function PracticeSessionScreen() {
         keepFullAnalysis: false,
         output: { primary: { enabled: true, format: "wav" } },
         android: { audioFocusStrategy: "background" },
-        onAudioStream: async (event) => {
-          if (typeof event.data === "string") latestAudioRef.current = event.data;
-        },
       });
 
       cameraRef.current.startRecording({
@@ -438,7 +432,7 @@ export default function PracticeSessionScreen() {
       </View>
 
       {feedback && (
-        <View style={{ position: "absolute", top: 125, left: 20, right: 20, backgroundColor: "rgba(17,24,39,0.94)", borderLeftWidth: 4, borderLeftColor: feedback.title === "Chord Detected" ? "#22C55E" : "#F59E0B", padding: 16, borderRadius: 8 }}>
+        <View style={{ position: "absolute", top: 125, left: 20, right: 20, backgroundColor: "rgba(17,24,39,0.94)", borderLeftWidth: 4, borderLeftColor: feedback.title === "Chord Detected" || feedback.title === "Perfect!" ? "#22C55E" : "#F59E0B", padding: 16, borderRadius: 8 }}>
           <Text style={{ color: "white", fontWeight: "bold", fontSize: 18 }}>{feedback.title}</Text>
           <Text style={{ color: "white", fontSize: 16, lineHeight: 22, marginTop: 6 }}>{feedback.message || fingerInstruction}</Text>
         </View>

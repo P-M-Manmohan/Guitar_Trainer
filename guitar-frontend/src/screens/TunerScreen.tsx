@@ -17,6 +17,7 @@ export default function TunerScreen() {
   const [listening, setListening] = useState(false);
   const [error, setError] = useState("");
   const mountedRef = useRef(true);
+  const pitchHistoryRef = useRef<number[]>([]);
   const target = STANDARD_GUITAR_STRINGS.find((item) => item.id === targetId)!;
   const cents = frequency ? centsFromTarget(frequency, target.frequency) : null;
   const clampedCents = Math.max(-50, Math.min(50, cents || 0));
@@ -46,8 +47,13 @@ export default function TunerScreen() {
         android: { audioFocusStrategy: "interactive" },
         onAudioStream: async (event) => {
           if (event.data instanceof Float32Array) {
-            const detected = detectPitch(event.data, 16000);
-            if (detected && mountedRef.current) setFrequency(detected);
+            const detected = detectPitch(event.data, 16000, target.frequency);
+            if (detected && mountedRef.current) {
+              const history = [...pitchHistoryRef.current, detected].slice(-5);
+              pitchHistoryRef.current = history;
+              const sorted = [...history].sort((a, b) => a - b);
+              setFrequency(sorted[Math.floor(sorted.length / 2)]);
+            }
           }
         },
       });
@@ -55,7 +61,7 @@ export default function TunerScreen() {
     } catch {
       if (mountedRef.current) setError("Microphone access is required to use the tuner.");
     }
-  }, [startRecording]);
+  }, [startRecording, target.frequency]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -88,6 +94,7 @@ export default function TunerScreen() {
             onPress={() => {
               setTargetId(string.id);
               setFrequency(null);
+              pitchHistoryRef.current = [];
             }}
             style={{ width: "30%", flexGrow: 1, backgroundColor: string.id === targetId ? "#3B82F6" : "#1F2937", paddingVertical: 14, borderRadius: 8, alignItems: "center" }}
           >

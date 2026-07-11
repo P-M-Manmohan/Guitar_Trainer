@@ -15,6 +15,10 @@ type Lesson = {
   completed?: boolean;
 };
 
+function lessonIdentity(lesson: Lesson) {
+  return lesson.title.trim().replace(/\s+/g, " ").toLocaleLowerCase();
+}
+
 function LessonCard({
   lesson,
 }: {
@@ -63,7 +67,7 @@ export default function LessonScreen() {
         // The summary API is the single source for this screen. De-duplicate
         // defensively so a repeated row can never create a repeated card.
         const uniqueLessons = Array.isArray(response)
-          ? [...new Map(response.map((lesson) => [lesson.id, lesson])).values()]
+          ? [...new Map(response.map((lesson) => [lessonIdentity(lesson), lesson])).values()]
           : [];
         setLessons(uniqueLessons);
         setError("");
