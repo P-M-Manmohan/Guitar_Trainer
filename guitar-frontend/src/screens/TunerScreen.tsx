@@ -12,28 +12,30 @@ import {
 export default function TunerScreen() {
   const router = useRouter();
   const { startRecording, stopRecording } = useAudioRecorder();
+  const startRecordingRef = useRef(startRecording);
+  const stopRecordingRef = useRef(stopRecording);
+  startRecordingRef.current = startRecording;
+  stopRecordingRef.current = stopRecording;
   const [targetId, setTargetId] = useState("6");
   const [frequency, setFrequency] = useState<number | null>(null);
   const [listening, setListening] = useState(false);
   const [error, setError] = useState("");
   const mountedRef = useRef(true);
+  const startingRef = useRef(false);
   const pitchHistoryRef = useRef<number[]>([]);
   const target = STANDARD_GUITAR_STRINGS.find((item) => item.id === targetId)!;
+  const targetRef = useRef(target);
+  targetRef.current = target;
   const cents = frequency ? centsFromTarget(frequency, target.frequency) : null;
   const clampedCents = Math.max(-50, Math.min(50, cents || 0));
   const inTune = cents !== null && Math.abs(cents) <= 5;
 
-  const stopListening = useCallback(async () => {
-    try {
-      await stopRecording();
-    } catch {}
-    if (mountedRef.current) setListening(false);
-  }, [stopRecording]);
-
   const startListening = useCallback(async () => {
+    if (startingRef.current) return;
+    startingRef.current = true;
     setError("");
     try {
-      await startRecording({
+      await startRecordingRef.current({
         sampleRate: 16000,
         channels: 1,
         encoding: "pcm_16bit",
@@ -47,7 +49,11 @@ export default function TunerScreen() {
         android: { audioFocusStrategy: "interactive" },
         onAudioStream: async (event) => {
           if (event.data instanceof Float32Array) {
-            const detected = detectPitch(event.data, 16000, target.frequency);
+            const detected = detectPitch(
+              event.data,
+              16000,
+              targetRef.current.frequency
+            );
             if (detected && mountedRef.current) {
               const history = [...pitchHistoryRef.current, detected].slice(-5);
               pitchHistoryRef.current = history;
@@ -60,17 +66,19 @@ export default function TunerScreen() {
       if (mountedRef.current) setListening(true);
     } catch {
       if (mountedRef.current) setError("Microphone access is required to use the tuner.");
+    } finally {
+      startingRef.current = false;
     }
-  }, [startRecording, target.frequency]);
+  }, []);
 
   useEffect(() => {
     mountedRef.current = true;
     startListening();
     return () => {
       mountedRef.current = false;
-      stopRecording().catch(() => {});
+      stopRecordingRef.current().catch(() => {});
     };
-  }, [startListening, stopRecording]);
+  }, [startListening]);
 
   const guidance =
     cents === null
@@ -92,6 +100,7 @@ export default function TunerScreen() {
           <TouchableOpacity
             key={string.id}
             onPress={() => {
+              targetRef.current = string;
               setTargetId(string.id);
               setFrequency(null);
               pitchHistoryRef.current = [];
@@ -123,9 +132,7 @@ export default function TunerScreen() {
       </View>
 
       {!!error && <Text style={{ color: "#EF4444", textAlign: "center", marginTop: 24 }}>{error}</Text>}
-      <TouchableOpacity onPress={listening ? stopListening : startListening} style={{ backgroundColor: listening ? "#374151" : "#3B82F6", padding: 16, borderRadius: 8, marginTop: 32 }}>
-        <Text style={{ color: "white", textAlign: "center", fontWeight: "bold", fontSize: 17 }}>{listening ? "Stop Listening" : "Start Listening"}</Text>
-      </TouchableOpacity>
+      {!error && <Text style={{ color: "#9CA3AF", textAlign: "center", marginTop: 32 }}>{listening ? "Listening continuously…" : "Starting microphone…"}</Text>}
       <TouchableOpacity onPress={() => router.back()} style={{ padding: 16, marginTop: 8 }}>
         <Text style={{ color: "white", textAlign: "center", fontSize: 17 }}>Close</Text>
       </TouchableOpacity>
