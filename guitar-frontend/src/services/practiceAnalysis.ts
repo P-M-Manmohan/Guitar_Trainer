@@ -7,7 +7,14 @@ export type ExpectedFingerPosition = {
 
 export type ExpectedFingering = Record<string, ExpectedFingerPosition>;
 
+export type HandLandmark = {
+  x: number;
+  y: number;
+  z: number;
+};
+
 export type PracticeAnalysisResponse = {
+  hand_detected: boolean;
   target_chord: string;
   status: string;
   raw_status: string;
@@ -17,6 +24,9 @@ export type PracticeAnalysisResponse = {
   audio_correct: boolean;
   summary: string;
   instruction: string;
+  predicted_chord?: string | null;
+  chord_confidence?: number;
+  landmarks?: HandLandmark[] | null;
 };
 
 export type PracticeAnalysisRequest = {

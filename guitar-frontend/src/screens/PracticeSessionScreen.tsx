@@ -26,6 +26,7 @@ import MetronomeModal from "../components/MetronomeModal";
 import {
   analyzePractice,
   type ExpectedFingering,
+  type HandLandmark,
   type PracticeAnalysisResponse,
 } from "../services/practiceAnalysis";
 import { savePracticeRecording } from "../utils/practiceRecordings";
@@ -35,6 +36,85 @@ const ML_WIDTH = 216;
 const ML_HEIGHT = 384;
 const MAX_DURATION_MS = 30 * 60 * 1000;
 const FEEDBACK_DURATION_MS = 3000;
+
+const HAND_CONNECTIONS: [number, number, string][] = [
+  [0, 1, "#D1D5DB"], [0, 5, "#D1D5DB"], [5, 9, "#D1D5DB"],
+  [9, 13, "#D1D5DB"], [13, 17, "#D1D5DB"], [0, 17, "#D1D5DB"],
+  [1, 2, "#A78BFA"], [2, 3, "#A78BFA"], [3, 4, "#A78BFA"],
+  [5, 6, "#FACC15"], [6, 7, "#FACC15"], [7, 8, "#FACC15"],
+  [9, 10, "#4ADE80"], [10, 11, "#4ADE80"], [11, 12, "#4ADE80"],
+  [13, 14, "#60A5FA"], [14, 15, "#60A5FA"], [15, 16, "#60A5FA"],
+  [17, 18, "#F472B6"], [18, 19, "#F472B6"], [19, 20, "#F472B6"],
+];
+
+function displayChordName(chord: string) {
+  if (chord.endsWith("m")) return `${chord.slice(0, -1)} Minor`;
+  if (chord.endsWith("7")) return chord;
+  return `${chord} Major`;
+}
+
+function HandSkeleton({ landmarks }: { landmarks: HandLandmark[] }) {
+  const [size, setSize] = useState({ width: 0, height: 0 });
+  if (landmarks.length !== 21) return null;
+
+  const scale = Math.max(size.width / ML_WIDTH, size.height / ML_HEIGHT);
+  const renderedWidth = ML_WIDTH * scale;
+  const renderedHeight = ML_HEIGHT * scale;
+  const offsetX = (size.width - renderedWidth) / 2;
+  const offsetY = (size.height - renderedHeight) / 2;
+  const points = landmarks.map((landmark) => ({
+    x: offsetX + landmark.x * renderedWidth,
+    y: offsetY + landmark.y * renderedHeight,
+  }));
+
+  return (
+    <View
+      pointerEvents="none"
+      onLayout={(event) => setSize(event.nativeEvent.layout)}
+      style={{ position: "absolute", top: 0, right: 0, bottom: 0, left: 0 }}
+    >
+      {size.width > 0 && HAND_CONNECTIONS.map(([from, to, color]) => {
+        const start = points[from];
+        const end = points[to];
+        const dx = end.x - start.x;
+        const dy = end.y - start.y;
+        const length = Math.sqrt(dx * dx + dy * dy);
+        const angle = Math.atan2(dy, dx);
+        return (
+          <View
+            key={`${from}-${to}`}
+            style={{
+              position: "absolute",
+              left: (start.x + end.x) / 2 - length / 2,
+              top: (start.y + end.y) / 2 - 1.5,
+              width: length,
+              height: 3,
+              borderRadius: 2,
+              backgroundColor: color,
+              transform: [{ rotateZ: `${angle}rad` }],
+            }}
+          />
+        );
+      })}
+      {size.width > 0 && points.map((point, index) => (
+        <View
+          key={`landmark-${index}`}
+          style={{
+            position: "absolute",
+            left: point.x - 4,
+            top: point.y - 4,
+            width: 8,
+            height: 8,
+            borderRadius: 4,
+            borderWidth: 1,
+            borderColor: "white",
+            backgroundColor: "#22C55E",
+          }}
+        />
+      ))}
+    </View>
+  );
+}
 
 function bytesToBase64(bytes: Uint8Array) {
   "worklet";
@@ -122,6 +202,8 @@ export default function PracticeSessionScreen() {
   const [metronomeVisible, setMetronomeVisible] = useState(false);
   const [metronomePlaying, setMetronomePlaying] = useState(false);
   const [feedback, setFeedback] = useState<{ title: string; message: string } | null>(null);
+  const [liveChord, setLiveChord] = useState("Waiting...");
+  const [liveLandmarks, setLiveLandmarks] = useState<HandLandmark[]>([]);
   const [cameraError, setCameraError] = useState("");
 
   const hasPermission = hasCameraPermission && microphonePermission?.granted;
@@ -166,9 +248,23 @@ export default function PracticeSessionScreen() {
             bottom_right: [0.92, 0.63],
           },
         });
-        showFeedback(response);
+        if (mode === "free") {
+          setLiveLandmarks(response.landmarks || []);
+          if (!response.hand_detected) {
+            setLiveChord("No hand detected");
+          } else if (response.status === "recognized") {
+            setLiveChord(displayChordName(response.target_chord));
+          } else if (response.status === "analyzing") {
+            setLiveChord("Adjusting...");
+          } else {
+            setLiveChord("Adjusting...");
+          }
+        } else {
+          showFeedback(response);
+        }
       } catch {
         // Practice continues if an individual inference request is unavailable.
+        if (mode === "free") setLiveChord("ML service unavailable");
       } finally {
         requestInFlightRef.current = false;
       }
@@ -211,6 +307,7 @@ export default function PracticeSessionScreen() {
     recordingRef.current = false;
     setRecording(false);
     setAnalysisEnabled(false);
+    setLiveLandmarks([]);
     setMetronomePlaying(false);
     setTempUri(asFileUri(video.path));
     setTempAudioUri(audioUri);
@@ -386,34 +483,38 @@ export default function PracticeSessionScreen() {
         onError={(error) => setCameraError(error.message)}
       />
 
-      <View
-        pointerEvents="none"
-        style={{
-          position: "absolute",
-          left: "8%",
-          right: "8%",
-          top: "38%",
-          height: "25%",
-          borderWidth: 2,
-          borderColor: "rgba(96,165,250,0.9)",
-          borderRadius: 8,
-        }}
-      >
-        <Text
+      {mode === "free" && <HandSkeleton landmarks={liveLandmarks} />}
+
+      {mode === "selected" && (
+        <View
+          pointerEvents="none"
           style={{
             position: "absolute",
-            top: -28,
-            alignSelf: "center",
-            color: "white",
-            backgroundColor: "rgba(0,0,0,0.65)",
-            paddingHorizontal: 10,
-            paddingVertical: 4,
+            left: "8%",
+            right: "8%",
+            top: "38%",
+            height: "25%",
+            borderWidth: 2,
+            borderColor: "rgba(96,165,250,0.9)",
             borderRadius: 6,
           }}
         >
-          Keep the first five frets inside the guide
-        </Text>
-      </View>
+          <Text
+            style={{
+              position: "absolute",
+              top: -28,
+              alignSelf: "center",
+              color: "white",
+              backgroundColor: "rgba(0,0,0,0.65)",
+              paddingHorizontal: 10,
+              paddingVertical: 4,
+              borderRadius: 6,
+            }}
+          >
+            Keep the first five frets inside the guide
+          </Text>
+        </View>
+      )}
 
       <View style={{ position: "absolute", top: 55, left: 20, right: 20, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
         <TouchableOpacity onPress={() => setMetronomeVisible(true)} style={{ backgroundColor: "#3B82F6", width: 48, height: 48, borderRadius: 24, justifyContent: "center", alignItems: "center" }}>
@@ -424,7 +525,26 @@ export default function PracticeSessionScreen() {
         </TouchableOpacity>
       </View>
 
-      {feedback && (
+      {mode === "free" && (
+        <View
+          pointerEvents="none"
+          style={{
+            position: "absolute",
+            top: 120,
+            left: 20,
+            backgroundColor: "rgba(0,0,0,0.72)",
+            borderRadius: 8,
+            paddingHorizontal: 14,
+            paddingVertical: 10,
+          }}
+        >
+          <Text style={{ color: "#4ADE80", fontSize: 22, fontWeight: "bold" }}>
+            Chord: {liveChord}
+          </Text>
+        </View>
+      )}
+
+      {mode === "selected" && feedback && (
         <View style={{ position: "absolute", top: 125, left: 20, right: 20, backgroundColor: "rgba(17,24,39,0.94)", borderLeftWidth: 4, borderLeftColor: feedback.title === "Chord Detected" || feedback.title === "Perfect!" ? "#22C55E" : "#F59E0B", padding: 16, borderRadius: 8 }}>
           <Text style={{ color: "white", fontWeight: "bold", fontSize: 18 }}>{feedback.title}</Text>
           <Text style={{ color: "white", fontSize: 16, lineHeight: 22, marginTop: 6 }}>{feedback.message || fingerInstruction}</Text>
