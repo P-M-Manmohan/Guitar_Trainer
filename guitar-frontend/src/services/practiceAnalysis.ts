@@ -13,6 +13,24 @@ export type HandLandmark = {
   z: number;
 };
 
+
+export type FingerPlacement = {
+    string: number;
+    fret: number;
+    x: number;
+    y: number;
+}
+
+
+export type FrameResponse = {
+    hand_detected: boolean;
+    landmarks?: HandLandmark[];
+    predicted_chord?:string;
+    chord_confidence?: number;
+    finger_placement?: Record<string, FingerPlacement>;
+}
+
+
 export type PracticeAnalysisResponse = {
   hand_detected: boolean;
   target_chord: string;
@@ -44,6 +62,22 @@ export type PracticeAnalysisRequest = {
     bottom_left: [number, number];
     bottom_right: [number, number];
   };
+};
+
+export type NeckBBox = {
+    top_left: [number, number];
+    top_right: [number, number]
+    bottom_left: [number, number]
+    bottom_right: [number, number]
+}
+
+
+export type FrameRequest = {
+    image: string ;
+    image_format: string;
+    image_width: number;
+    image_height:number;
+    neck_bbox?: NeckBBox;
 };
 
 export function analyzePractice(request: PracticeAnalysisRequest) {

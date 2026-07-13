@@ -9,7 +9,8 @@ const metroHost = Constants.expoConfig?.hostUri?.split(":")[0];
 
 export const API_BASE_URL =
   configuredBaseUrl ||
-  (metroHost ? `http://${metroHost}:8080` : "http://127.0.0.1:8080");
+  (metroHost ? `http://${metroHost}:8080` : "http://192.168.1.101:8080");
+
 
 export const SERVER_ERROR = "Server Error!";
 
@@ -23,9 +24,14 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
       ...init.headers,
     },
   });
-  if (!response.ok) throw new Error(SERVER_ERROR);
 
   const body = await response.text();
+  if (!response.ok) {
+
+    throw new Error(
+        `HTTP ${response.status}: ${body || response.statusText}`
+    );
+  }
   return (body ? JSON.parse(body) : undefined) as T;
 }
 
@@ -34,6 +40,7 @@ export async function apiGet<T>(path: string): Promise<T> {
 }
 
 export async function apiPost<T>(path: string, body: unknown): Promise<T> {
+    console.log(path);
   return request<T>(path, {
     method: "POST",
     body: JSON.stringify(body),

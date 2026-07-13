@@ -21,6 +21,7 @@ pub async fn analyze_practice(
         request = request.header("x-api-key", &state.config.ai_service_key);
     }
 
+
     let response = match request.send().await {
         Ok(response) => response,
         Err(error) => {
@@ -35,15 +36,24 @@ pub async fn analyze_practice(
 
     let status =
         StatusCode::from_u16(response.status().as_u16()).unwrap_or(StatusCode::BAD_GATEWAY);
-    match response.json::<Value>().await {
-        Ok(body) => (status, Json(body)).into_response(),
-        Err(error) => {
-            tracing::error!(err = %error, "ML service returned invalid JSON");
-            (
-                StatusCode::BAD_GATEWAY,
-                Json(json!({ "error": "ML service returned an invalid response" })),
-            )
-                .into_response()
-        }
+    let body = match response.json::<Value>().await {
+    Ok(body) => body,
+    Err(error) => {
+        tracing::error!(err = %error, "ML service returned invalid JSON");
+        return (
+            StatusCode::BAD_GATEWAY,
+            Json(json!({ "error": "ML service returned an invalid response" })),
+        )
+            .into_response();
     }
-}
+};
+
+tracing::info!("========== ML RESPONSE ==========");
+tracing::info!("Status: {}", status);
+tracing::info!(
+    "Body:\n{}",
+    serde_json::to_string_pretty(&body).unwrap()
+);
+
+(status, Json(body)).into_response()
+    }

@@ -62,7 +62,7 @@ export default function HomeScreen() {
           marginTop: 50,
         }}
       >
-        🎸 Guitar Trainer
+         Guitar Trainer
       </Text>
 
       <Text

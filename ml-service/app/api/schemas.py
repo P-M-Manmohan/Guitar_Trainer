@@ -11,7 +11,10 @@ class NeckBBox(BaseModel):
 
 
 class FrameRequest(BaseModel):
-    image: str = Field(..., description="Base64 JPEG or PNG camera frame")
+    image: str
+    image_format: Literal["rgb", "jpeg", "png"]
+    image_width: int
+    image_height: int
     neck_bbox: Optional[NeckBBox] = None
 
 

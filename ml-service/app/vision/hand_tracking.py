@@ -65,6 +65,7 @@ class HandTracker:
 
         if not result.hand_landmarks:
             return None
+        cv2.imwrite("/tmp/input.png", frame_bgr)
         return [
             {"x": float(landmark.x), "y": float(landmark.y), "z": float(landmark.z)}
             for landmark in result.hand_landmarks[0]

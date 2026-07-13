@@ -63,12 +63,28 @@ def _decode_frame(
     image_width: int | None = None,
     image_height: int | None = None,
 ):
+    
+
     try:
+        print(
+            f"format={image_format}",
+            f"width={image_width}",
+            f"height={image_height}",
+            flush=True,
+        )
         image_data = base64.b64decode(image_base64.split(",")[-1], validate=True)
+        print(
+            f"decoded bytes={len(image_data)}",
+            flush=True,
+        )
         if image_format == "rgb":
             if image_width is None or image_height is None:
                 raise HTTPException(422, "Raw RGB frames require width and height.")
             expected_bytes = image_width * image_height * 3
+            print(
+                f"expected={expected_bytes}",
+                flush=True,
+            )
             if expected_bytes > MAX_RAW_IMAGE_BYTES:
                 raise HTTPException(413, "Raw RGB frame is too large.")
             if len(image_data) != expected_bytes:
@@ -76,9 +92,8 @@ def _decode_frame(
                     400,
                     f"Raw RGB frame has {len(image_data)} bytes; expected {expected_bytes}.",
                 )
-            frame_rgb = np.frombuffer(image_data, np.uint8).reshape(
-                (image_height, image_width, 3)
-            )
+            frame_rgb = np.frombuffer(image_data, np.uint8).reshape(image_height, image_width, 3)
+
             return cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2BGR)
 
         if len(image_data) > MAX_IMAGE_BYTES:
@@ -128,7 +143,17 @@ def health_check():
 
 @router.post("/process-frame", response_model=FrameResponse)
 def process_frame(payload: FrameRequest):
-    frame = _decode_frame(payload.image)
+    print("here",payload.image)
+    print(payload.image_format)
+    print(payload.image_width)
+    print(payload.image_height)
+
+    frame = _decode_frame(
+            payload.image,
+            payload.image_format,
+            payload.image_width,
+            payload.image_height
+            )
     with frame_tracker_lock:
         landmarks = _get_tracker(live=False).process_frame(frame)
         if not landmarks:
@@ -137,7 +162,7 @@ def process_frame(payload: FrameRequest):
         placement = fret_detector.analyze_hand_placement(
             landmarks, _neck_bbox_to_dict(payload.neck_bbox), frame
         )
-    return FrameResponse(
+    response = FrameResponse(
         hand_detected=True,
         landmarks=_format_landmarks(landmarks),
         predicted_chord=chord_name,
@@ -145,11 +170,18 @@ def process_frame(payload: FrameRequest):
         finger_placement=_format_placement(placement),
     )
 
+    print("ML: RESPONSE: ")
+    print(response.model_dump(), flush=True)
+
+    return response
+
 
 @router.post("/analyze-practice", response_model=PracticeAnalysisResponse)
 def analyze_practice(payload: PracticeAnalysisRequest):
     if payload.mode == "selected" and not payload.target_chord:
         raise HTTPException(422, "target_chord is required in selected mode.")
+
+    print( payload.image);
 
     frame = _decode_frame(
         payload.image,
@@ -157,6 +189,7 @@ def analyze_practice(payload: PracticeAnalysisRequest):
         payload.image_width,
         payload.image_height,
     )
+    cv2.imwrite("/tmp/debug.png", frame)
     with live_tracker_lock:
         landmarks = _get_tracker(live=True).process_frame(frame)
         chord_name = None

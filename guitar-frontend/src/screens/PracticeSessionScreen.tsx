@@ -27,7 +27,9 @@ import {
   analyzePractice,
   type ExpectedFingering,
   type HandLandmark,
-  type PracticeAnalysisResponse,
+  //type PracticeAnalysisResponse,
+  type FrameResponse,
+  PracticeAnalysisResponse,
 } from "../services/practiceAnalysis";
 import { savePracticeRecording } from "../utils/practiceRecordings";
 import { apiPost } from "../services/api";
@@ -64,7 +66,7 @@ function HandSkeleton({ landmarks }: { landmarks: HandLandmark[] }) {
   const offsetY = (size.height - renderedHeight) / 2;
   const points = landmarks.map((landmark) => ({
     x: offsetX + landmark.x * renderedWidth,
-    y: offsetY + landmark.y * renderedHeight,
+    y: offsetY + (1 - landmark.y) * renderedHeight,
   }));
 
   return (
@@ -208,7 +210,7 @@ export default function PracticeSessionScreen() {
 
   const hasPermission = hasCameraPermission && microphonePermission?.granted;
 
-  const showFeedback = useCallback((response: PracticeAnalysisResponse) => {
+  const showFeedback = useCallback((response: PracticeAnalysisResponse) => {//PracticeAnalysisResponse) => {
     if (response.raw_status !== response.stable_status) {
       return;
     }
@@ -262,8 +264,9 @@ export default function PracticeSessionScreen() {
         } else {
           showFeedback(response);
         }
-      } catch {
-        // Practice continues if an individual inference request is unavailable.
+      } catch (err){
+          console.error("analyzePractice failed:", err)
+       //Practice continues if an individual inference request is unavailable.
         if (mode === "free") setLiveChord("ML service unavailable");
       } finally {
         requestInFlightRef.current = false;
@@ -288,6 +291,10 @@ export default function PracticeSessionScreen() {
               : frame.orientation === "portrait-upside-down"
                 ? "180deg"
                 : "0deg";
+            console.log(
+        frame.orientation,
+        frame.isMirrored
+    );
         const rgb = resize(frame, {
           scale: landscape
             ? { width: ML_HEIGHT, height: ML_WIDTH }
@@ -297,9 +304,17 @@ export default function PracticeSessionScreen() {
           pixelFormat: "rgb",
           dataType: "uint8",
         });
+        console.log({
+  width: frame.width,
+  height: frame.height,
+  orientation: frame.orientation,
+  isMirrored: frame.isMirrored,
+  pixelFormat: frame.pixelFormat,
+});
         sendFrameToJS(bytesToBase64(rgb));
       });
     },
+
     [analysisEnabled, mode, resize, sendFrameToJS]
   );
 
