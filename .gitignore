@@ -35,6 +35,4 @@ env/
 .DS_Store
 
 
-seed*
-lessons.json
 error.txt

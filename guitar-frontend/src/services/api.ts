@@ -9,7 +9,7 @@ const metroHost = Constants.expoConfig?.hostUri?.split(":")[0];
 
 export const API_BASE_URL =
   configuredBaseUrl ||
-  (metroHost ? `http://${metroHost}:8080` : "http://192.168.1.101:8080");
+  (metroHost ? `http://${metroHost}:8080` : "http://10.236.98.47:8080");
 
 
 export const SERVER_ERROR = "Server Error!";

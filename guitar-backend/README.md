@@ -31,7 +31,11 @@ cargo install sqlx-cli --no-default-features --features postgres
 Requires Docker and Docker Compose installed and running.
  
 ```bash
-sudo fuser -k 5432/tcp
+#dont run this first line
+sudo fuser -k 5432/tcp 
+
+
+
 docker compose up -d postgres redis pgbouncer
 ```
  

@@ -1,0 +1,141 @@
+{
+  "curriculum": [
+    {
+      "id": 1,
+      "topic": "Parts of the Guitar",
+      "description": "Learn the anatomy of the guitar including the headstock, tuning pegs, machine heads, nut, neck, fretboard, frets, body, bridge, sound hole, pickups, and strings.",
+      "videos": [
+        {
+          "title": "Parts of the Guitar",
+          "url": "https://www.youtube.com/watch?v=_C1ISlvM09g"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "topic": "Correct Posture and Hand Positioning",
+      "description": "Learn the proper sitting posture, guitar positioning, and overall body mechanics to play comfortably and avoid injury.",
+      "videos": [
+        {
+          "title": "Correct Guitar Posture",
+          "url": "https://www.youtube.com/watch?v=MlV6WhM9YhE"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "topic": "Fretting Hand Position",
+      "description": "Learn proper thumb placement, wrist alignment, finger curvature, fingertip positioning, and efficient fret placement.",
+      "videos": [
+        {
+          "title": "Fretting Hand Technique",
+          "url": "https://www.youtube.com/watch?v=VB0vWNqNMbA"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "topic": "Strumming Basics",
+      "description": "Learn basic strumming techniques, rhythm, pick movement, and maintaining consistent timing.",
+      "videos": [
+        {
+          "title": "Strumming Basics (Part 1)",
+          "url": "https://www.youtube.com/watch?v=CjM5fyXoV8w"
+        },
+        {
+          "title": "Strumming Basics (Part 2)",
+          "url": "https://www.youtube.com/watch?v=6LmQCdt_ZhQ"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "topic": "Finger Stretches and Warm-ups",
+      "description": "Practice finger stretching exercises to improve flexibility, finger independence, and reduce tension.",
+      "videos": [
+        {
+          "title": "Finger Stretch Exercises",
+          "url": "https://www.youtube.com/watch?v=qYx8r0EtGsE&pp=ugUHEgVlbi1HQg%3D%3D"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "topic": "Reading Guitar Tabs",
+      "description": "Understand how to read guitar tablature, string numbering, fret numbers, and common tab symbols.",
+      "videos": [
+        {
+          "title": "How to Read Guitar Tabs",
+          "url": "https://www.youtube.com/watch?v=9xsG7n4Jalo"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "topic": "Holding a Pick",
+      "description": "Learn the proper way to hold a guitar pick for efficient strumming and picking.",
+      "videos": [
+        {
+          "title": "How to Hold a Pick",
+          "url": "https://www.youtube.com/watch?v=-04Et5qIoa4"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "topic": "Music Theory Fundamentals",
+      "description": "Introduction to basic music theory concepts including notes, intervals, scales, and chords.",
+      "videos": [
+        {
+          "title": "Music Theory for Guitarists",
+          "url": "https://www.youtube.com/watch?v=o-qNepGpI3U"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "topic": "Rhythm Guitar",
+      "description": "Learn rhythm guitar techniques including chord transitions, groove, and timing.",
+      "videos": [
+        {
+          "title": "Rhythm Guitar Lesson",
+          "url": "https://www.youtube.com/watch?v=-SxF34T4QpU"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "topic": "Practice Drills",
+      "description": "Daily exercises to improve speed, accuracy, timing, and finger independence.",
+      "videos": [
+        {
+          "title": "Guitar Practice Drills",
+          "url": "https://www.youtube.com/watch?v=cvQFwy9-90M"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "topic": "Fingerstyle Guitar",
+      "description": "Introduction to fingerstyle guitar including fingerpicking patterns and hand coordination.",
+      "videos": [
+        {
+          "title": "Fingerstyle Basics",
+          "url": "https://www.youtube.com/watch?v=qQGP96XHBkg"
+        }
+      ]
+    },
+
+    {
+      "id": 12,
+      "topic": "Soloing",
+      "description": "Learn the fundamentals of guitar soloing, phrasing, scales, and improvisation.",
+      "videos": [
+        {
+          "title": "Soloing Basics",
+          "url": "https://www.youtube.com/watch?v=HY5qWMbvsjY"
+        }
+      ]
+    }
+  ]
+}
