@@ -27,3 +27,16 @@ pub async fn get_chord(
 
         Ok(Json(chord))
 }
+
+pub async fn match_chord(
+    State(state): State<AppState>,
+    Json(payload): Json<serde_json::Value>,
+) -> Result<Json<Option<String>>, axum::http::StatusCode> {
+    let result = chord_service::match_chord(&state.db, &payload)
+        .await
+        .map_err(|e| {
+            tracing::error!("Error in match_chord handler: {}", e);
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+    Ok(Json(result))
+}

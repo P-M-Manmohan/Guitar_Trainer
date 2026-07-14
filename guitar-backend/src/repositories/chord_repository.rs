@@ -79,3 +79,27 @@ pub async fn get_chord(
             positions,
         }))
 }
+
+pub async fn match_chord_shape(
+    pool: &PgPool,
+    fingers_pattern: &str,
+    frets_pattern: &str,
+) -> Result<Vec<(String, String, String, String)>, sqlx::Error> {
+    let rows = sqlx::query!(
+        r#"
+        SELECT c.key, c.suffix, cp.frets, cp.fingers
+        FROM chord_positions cp
+        JOIN chords c ON cp.chord_id = c.id
+        WHERE cp.fingers LIKE $1 AND cp.frets LIKE $2
+        "#,
+        fingers_pattern,
+        frets_pattern
+    )
+    .fetch_all(pool)
+    .await?;
+
+    Ok(rows
+        .into_iter()
+        .map(|row| (row.key, row.suffix, row.frets, row.fingers))
+        .collect())
+}
