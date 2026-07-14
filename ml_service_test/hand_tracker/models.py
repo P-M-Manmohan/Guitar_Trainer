@@ -1,5 +1,7 @@
-from dataclasses import dataclass
 from __future__ import annotations
+
+from dataclasses import dataclass
+from enum import IntEnum
 
 
 @dataclass(slots=True)
@@ -34,3 +36,18 @@ class HandLandmarks:
     middle_mcp: Landmark
     ring_mcp: Landmark
     pinky_mcp: Landmark
+
+class HandPoint(IntEnum):
+    WRIST = 0
+
+    THUMB = 4
+    INDEX = 8
+    MIDDLE = 12
+    RING = 16
+    PINKY = 20
+    
+    THUMB_MCP = 4
+    INDEX_MCP = 8
+    MIDDLE_MCP = 12
+    RING_MCP = 16
+    PINKY_MCP = 20
