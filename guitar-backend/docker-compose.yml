@@ -56,6 +56,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      pgbouncer:
+        condition: service_started
     environment:
       PORT: 8080
       ENVIRONMENT: development
