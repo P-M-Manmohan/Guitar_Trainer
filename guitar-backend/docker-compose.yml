@@ -59,7 +59,7 @@ services:
       PORT: 8080
       ENVIRONMENT: development
       # Point at PgBouncer, not Postgres directly
-      DATABASE_URL: postgres://guitar:guitar_secret@pgbouncer:6432/guitar_dev
+      DATABASE_URL: postgres://guitar:guitar_secret@pgbouncer:5432/guitar_dev
       DB_POOL_MAX: 20
       REDIS_URL: redis://redis:6379
       JWT_SECRET: dev_secret_change_in_production
