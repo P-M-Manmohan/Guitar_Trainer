@@ -7,7 +7,6 @@ from pathlib import Path
 CHORD_DB_ZIP_URL = "https://github.com/szaza/guitar-chords-db-json/archive/refs/heads/master.zip"
 ZIP_FILE_NAME = "chord_db.zip"
 TARGET_DIR = Path("./guitar-backend/guitar-chords-db-json")
-TEMP_EXTRACT_DIR = Path("./temp_chord_db_extract")
 
 def main():
     print("=== Guitar Trainer Database Setup ===")
@@ -21,63 +20,53 @@ def main():
         print(f"Error downloading chord database: {e}")
         return
 
-    # 2. Extract the ZIP file
-    print("Extracting chord database...")
+    # 2. Extract directly to target directory
+    print("Extracting chord database directly to target folder...")
     try:
-        if TEMP_EXTRACT_DIR.exists():
-            shutil.rmtree(TEMP_EXTRACT_DIR)
+        if TARGET_DIR.exists():
+            try:
+                shutil.rmtree(TARGET_DIR)
+            except Exception as e:
+                print(f"Warning: Could not clear existing target dir: {e}")
+        TARGET_DIR.mkdir(parents=True, exist_ok=True)
         
         with zipfile.ZipFile(ZIP_FILE_NAME, 'r') as zip_ref:
-            zip_ref.extractall(TEMP_EXTRACT_DIR)
+            for member in zip_ref.infolist():
+                # Path parts: e.g. "guitar-chords-db-json-master/C/C_maj.json"
+                parts = Path(member.filename).parts
+                if len(parts) > 1:
+                    # Strip the first part ("guitar-chords-db-json-master")
+                    rel_path = Path(*parts[1:])
+                    target_path = TARGET_DIR / rel_path
+                    
+                    if member.is_dir():
+                        target_path.mkdir(parents=True, exist_ok=True)
+                    else:
+                        target_path.parent.mkdir(parents=True, exist_ok=True)
+                        with zip_ref.open(member) as source, open(target_path, "wb") as target:
+                            shutil.copyfileobj(source, target)
+                            
         print("Extraction complete.")
     except Exception as e:
         print(f"Error extracting ZIP file: {e}")
-        # Clean up
-        if os.path.exists(ZIP_FILE_NAME):
-            os.remove(ZIP_FILE_NAME)
-        return
-
-    # 3. Move the contents to the target directory
-    print("Moving files to backend directory...")
-    try:
-        if TARGET_DIR.exists():
-            shutil.rmtree(TARGET_DIR)
-        TARGET_DIR.mkdir(parents=True, exist_ok=True)
-        
-        # The zip extracts into a folder named "guitar-chords-db-json-master"
-        source_dir = TEMP_EXTRACT_DIR / "guitar-chords-db-json-master"
-        
-        # Check if the folder exists, otherwise look for any subdirectory
-        if not source_dir.exists():
-            subdirs = [x for x in TEMP_EXTRACT_DIR.iterdir() if x.is_dir()]
-            if subdirs:
-                source_dir = subdirs[0]
-        
-        if source_dir.exists():
-            # Move all subdirectories (like A, B, C, etc.) and files
-            for item in source_dir.iterdir():
-                shutil.move(str(item), str(TARGET_DIR / item.name))
-            print(f"Chord database files successfully moved to: {TARGET_DIR.resolve()}")
-        else:
-            print("Error: Could not locate extracted source directory.")
-            return
-            
-    except Exception as e:
-        print(f"Error moving files: {e}")
         return
     finally:
-        # 4. Clean up temporary files
-        print("Cleaning up temporary files...")
+        # 3. Clean up zip file
+        print("Cleaning up zip file...")
         if os.path.exists(ZIP_FILE_NAME):
-            os.remove(ZIP_FILE_NAME)
-        if TEMP_EXTRACT_DIR.exists():
-            shutil.rmtree(TEMP_EXTRACT_DIR)
+            try:
+                os.remove(ZIP_FILE_NAME)
+            except Exception as e:
+                print(f"Warning: Could not delete zip: {e}")
 
-    # 5. Run the seeding script
+    # 4. Run the seeding script
     print("Seeding database (running seed.py)...")
     if Path("seed.py").exists():
         try:
             import seed
+            # Reload module in case it was imported before
+            import importlib
+            importlib.reload(seed)
             seed.main()
             print("Database successfully seeded!")
         except Exception as e:
