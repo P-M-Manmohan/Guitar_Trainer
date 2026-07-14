@@ -1,0 +1,46 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                SELECT\n                    position_index,\n                    frets,\n                    fingers,\n                    barres,\n                    capo\n                FROM chord_positions\n                WHERE chord_id = $1\n                ORDER BY position_index\n                ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "position_index",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "frets",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "fingers",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "barres",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 4,
+        "name": "capo",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "db50fcf76fa640d0ba485885e02efe48efb57538637d72863b0ea2b205dff7c2"
+}

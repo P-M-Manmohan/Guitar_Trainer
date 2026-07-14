@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE users\n            SET lessons_completed = GREATEST(lessons_completed + $1, 0)\n            WHERE id = $2\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "d7f00effee341f5e2a24442423c3c984345c2f699f2c4f3b1c80fc68c65dd95b"
+}
