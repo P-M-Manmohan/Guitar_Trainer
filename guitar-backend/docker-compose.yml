@@ -7,7 +7,7 @@ services:
       POSTGRES_USER: guitar
       POSTGRES_PASSWORD: guitar_secret
     ports:
-      - "5433:5432"
+      - "5445:5432"
     volumes:
       - pg_data:/var/lib/postgresql/data
     healthcheck:

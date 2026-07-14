@@ -1,7 +1,7 @@
 import json
 import psycopg
 
-DATABASE_URL = "postgresql://guitar:guitar_secret@localhost:5433/guitar_dev"
+DATABASE_URL = "postgresql://guitar:guitar_secret@localhost:5445/guitar_dev"
 
 with open("./guitar-backend/lessons.json", "r", encoding="utf-8") as f:
     data = json.load(f)
