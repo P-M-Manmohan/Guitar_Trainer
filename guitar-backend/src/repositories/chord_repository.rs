@@ -85,21 +85,28 @@ pub async fn match_chord_shape(
     fingers_pattern: &str,
     frets_pattern: &str,
 ) -> Result<Vec<(String, String, String, String)>, sqlx::Error> {
-    let rows = sqlx::query!(
+    use sqlx::Row;
+    let rows = sqlx::query(
         r#"
         SELECT c.key, c.suffix, cp.frets, cp.fingers
         FROM chord_positions cp
         JOIN chords c ON cp.chord_id = c.id
         WHERE cp.fingers LIKE $1 AND cp.frets LIKE $2
         "#,
-        fingers_pattern,
-        frets_pattern
     )
+    .bind(fingers_pattern)
+    .bind(frets_pattern)
     .fetch_all(pool)
     .await?;
 
     Ok(rows
         .into_iter()
-        .map(|row| (row.key, row.suffix, row.frets, row.fingers))
+        .map(|row| {
+            let key: String = row.get("key");
+            let suffix: String = row.get("suffix");
+            let frets: String = row.get("frets");
+            let fingers: String = row.get("fingers");
+            (key, suffix, frets, fingers)
+        })
         .collect())
 }
