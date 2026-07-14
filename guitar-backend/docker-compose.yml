@@ -27,14 +27,14 @@ services:
       ml-service:
         condition: service_healthy
     environment:
-      POSTGRESQL_HOST: postgres
-      POSTGRESQL_PORT: 5432
-      POSTGRESQL_DATABASE: guitar_dev
-      POSTGRESQL_USERNAME: guitar
-      POSTGRESQL_PASSWORD: guitar_secret
-      PGBOUNCER_POOL_MODE: transaction
-      PGBOUNCER_MAX_CLIENT_CONN: 1000
-      PGBOUNCER_DEFAULT_POOL_SIZE: 25
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: guitar_dev
+      DB_USER: guitar
+      DB_PASSWORD: guitar_secret
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: 1000
+      DEFAULT_POOL_SIZE: 25
     ports:
       - "6432:6432"
 
