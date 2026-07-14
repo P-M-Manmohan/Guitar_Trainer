@@ -10,7 +10,7 @@ from psycopg.rows import tuple_row
 # CONFIG
 # ==========================
 
-DATABASE_URL = "postgresql://guitar:guitar_secret@localhost:5432/guitar_dev"
+DATABASE_URL = "postgresql://guitar:guitar_secret@localhost:5433/guitar_dev"
 DATA_DIR = "./guitar-backend/guitar-chords-db-json"
 
 # ==========================

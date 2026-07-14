@@ -72,7 +72,7 @@ def main():
         except Exception as e:
             print(f"Error running seed.py: {e}")
             print("Please ensure your local PostgreSQL database is running and accessible at:")
-            print("postgresql://guitar:guitar_secret@localhost:5432/guitar_dev")
+            print("postgresql://guitar:guitar_secret@localhost:5433/guitar_dev")
     else:
         print("Warning: seed.py not found in the root directory. Skipping automatic seed.")
 
