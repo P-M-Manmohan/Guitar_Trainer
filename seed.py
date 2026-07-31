@@ -10,7 +10,7 @@ from psycopg.rows import tuple_row
 # CONFIG
 # ==========================
 
-DATABASE_URL = "postgresql://guitar:guitar_secret@localhost:5432/guitar_dev"
+DATABASE_URL = "postgresql://guitar:guitar_secret@localhost:5445/guitar_dev"
 DATA_DIR = "./guitar-backend/guitar-chords-db-json"
 
 # ==========================
@@ -75,20 +75,31 @@ def main():
                 chord_count += 1
 
                 for idx, pos in enumerate(chord["positions"]):
-
                     barre = pos.get("barres")
-
                     if barre is not None and barre != "":
                         barre = int(barre)
                     else:
                         barre = None
                     capo = str(pos.get("capo", "false")).lower() == "true"
+
+                    frets_list = pos["frets"]
+                    if isinstance(frets_list, list):
+                        frets_str = "".join('x' if x == -1 or x == 'x' else str(x) for x in frets_list)
+                    else:
+                        frets_str = str(frets_list)
+
+                    fingers_list = pos["fingers"]
+                    if isinstance(fingers_list, list):
+                        fingers_str = "".join('x' if x == -1 or x == 'x' else str(x) for x in fingers_list)
+                    else:
+                        fingers_str = str(fingers_list)
+
                     position_buffer.append(
                         (
                             chord_id,
                             idx,
-                            pos["frets"],
-                            pos["fingers"],
+                            frets_str,
+                            fingers_str,
                             barre,
                             capo,
                         )

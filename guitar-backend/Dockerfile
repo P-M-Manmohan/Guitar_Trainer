@@ -14,7 +14,8 @@ RUN rm -rf src
 # Build real source
 COPY src ./src
 COPY migrations ./migrations
-RUN touch src/main.rs && cargo build --release
+COPY .sqlx ./.sqlx
+RUN touch src/main.rs && SQLX_OFFLINE=true cargo build --release
 
 # ── Stage 2: runtime ──────────────────────────────────────────────────────────
 FROM debian:bookworm-slim AS runtime

@@ -1,0 +1,34 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            username,\n            practice_time,\n            lessons_completed\n        FROM users\n        WHERE id = $1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "username",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "practice_time",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "lessons_completed",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "8856a135cb6d23b4ff227d3b69ed366efc6c747d60c3882a936fefb6b1e2c0be"
+}

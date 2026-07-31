@@ -1,0 +1,47 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT\n                l.id,\n                l.title,\n                l.description,\n                l.url,\n\n                EXISTS (\n                    SELECT 1\n                    FROM lessons_completed lc\n                    WHERE lc.lesson_id = l.id\n                    AND lc.user_id = $2\n                ) AS completed\n\n            FROM lessons l\n            WHERE l.id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "title",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "completed",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      null
+    ]
+  },
+  "hash": "991a781be7a0379e53935dd5563b3dfe37b974e495ce7ad8ee7cc1d68eea368f"
+}

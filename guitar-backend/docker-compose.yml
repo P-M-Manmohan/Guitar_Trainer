@@ -7,7 +7,7 @@ services:
       POSTGRES_USER: guitar
       POSTGRES_PASSWORD: guitar_secret
     ports:
-      - "5432:5432"
+      - "5445:5432"
     volumes:
       - pg_data:/var/lib/postgresql/data
     healthcheck:
@@ -27,14 +27,15 @@ services:
       ml-service:
         condition: service_healthy
     environment:
-      POSTGRESQL_HOST: postgres
-      POSTGRESQL_PORT: 5432
-      POSTGRESQL_DATABASE: guitar_dev
-      POSTGRESQL_USERNAME: guitar
-      POSTGRESQL_PASSWORD: guitar_secret
-      PGBOUNCER_POOL_MODE: transaction
-      PGBOUNCER_MAX_CLIENT_CONN: 1000
-      PGBOUNCER_DEFAULT_POOL_SIZE: 25
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: guitar_dev
+      DB_USER: guitar
+      DB_PASSWORD: guitar_secret
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: 1000
+      DEFAULT_POOL_SIZE: 25
+      AUTH_TYPE: scram-sha-256
     ports:
       - "6432:6432"
 
@@ -55,11 +56,13 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      pgbouncer:
+        condition: service_started
     environment:
       PORT: 8080
       ENVIRONMENT: development
       # Point at PgBouncer, not Postgres directly
-      DATABASE_URL: postgres://guitar:guitar_secret@pgbouncer:6432/guitar_dev
+      DATABASE_URL: postgres://guitar:guitar_secret@pgbouncer:5432/guitar_dev
       DB_POOL_MAX: 20
       REDIS_URL: redis://redis:6379
       JWT_SECRET: dev_secret_change_in_production
@@ -74,9 +77,9 @@ services:
       AI_SERVICE_KEY: ""
       RATE_LIMIT_RPS: 60
     ports:
-      - "8080:8080"
+      - "8088:8080"
     volumes:
-      - ./:/app
+      - ./uploads:/app/uploads
 
   ml-service:
     build:
